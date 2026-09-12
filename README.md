@@ -15,14 +15,14 @@ The three charts share a cursor: hovering any of them syncs the crosshair and to
 
 ### HACS (recommended)
 
-1. HACS → ⋮ → **Custom repositories** → add `https://github.com/ktryggestad/weather-meteogram-card`, category **Dashboard**.
+1. HACS → ⋮ → **Custom repositories** → add `https://github.com/larrifax/weather-meteogram-card`, category **Dashboard**.
 2. Install **Weather Meteogram Card**.
 3. HACS registers the resource automatically. If it doesn't, add it under **Settings → Dashboards → ⋮ → Resources**:
    - URL `/hacsfiles/weather-meteogram-card/weather-meteogram-card.js`, type **JavaScript Module**.
 
 ### Manual
 
-1. Download `weather-meteogram-card.js` from the [latest release](https://github.com/ktryggestad/weather-meteogram-card/releases).
+1. Download `weather-meteogram-card.js` from the [latest release](https://github.com/larrifax/weather-meteogram-card/releases).
 2. Copy it to `config/www/`.
 3. Add the resource: URL `/local/weather-meteogram-card.js`, type **JavaScript Module**.
 

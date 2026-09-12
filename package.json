@@ -6,7 +6,7 @@
   "author": "Kristian Tryggestad",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ktryggestad/weather-meteogram-card"
+    "url": "https://github.com/larrifax/weather-meteogram-card"
   },
   "type": "module",
   "scripts": {
