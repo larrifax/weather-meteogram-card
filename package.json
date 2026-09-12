@@ -12,7 +12,6 @@
   "scripts": {
     "build": "vite build",
     "watch": "vite build --watch",
-    "start": "concurrently --kill-others --names build,serve \"vite build --watch\" \"vite preview\"",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint",
     "format": "oxfmt .",
@@ -23,19 +22,10 @@
     "echarts": "^5.5.1"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0",
     "oxfmt": "^0.67.0",
     "oxlint": "^1.82.0",
     "playwright": "^1.63.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
-  },
-  "browserslist": [
-    "last 4 Chrome versions",
-    "last 1 ChromeAndroid versions",
-    "last 4 Edge versions",
-    "last 4 Firefox versions",
-    "Safari >= 17.6",
-    "iOS >= 17.6"
-  ]
+  }
 }

@@ -18,5 +18,4 @@ export default defineConfig({
       output: { codeSplitting: false },
     },
   },
-  preview: { port: 4000, host: "0.0.0.0", cors: true },
 });
