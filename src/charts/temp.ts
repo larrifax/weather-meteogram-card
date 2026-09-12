@@ -3,19 +3,14 @@ import { COL, GRID, type ThemeColors } from "../const";
 import { num, type TimedForecast } from "../forecast";
 import { xAxis } from "./axis";
 
-export function tempOption(
-  data: TimedForecast[],
-  hours: string[],
-  th: ThemeColors,
-): EChartsOption {
+export function tempOption(data: TimedForecast[], hours: string[], th: ThemeColors): EChartsOption {
   const temps = data.map((f) => num(f.temperature));
   return {
     animation: false,
     grid: { left: GRID.left, right: GRID.right, top: 22, bottom: 4 },
     tooltip: {
       trigger: "axis",
-      formatter: (p: any) =>
-        `${p[0].axisValue}:00<br>Temp <b>${p[0].data}°</b>`,
+      formatter: (p: any) => `${p[0].axisValue}:00<br>Temp <b>${p[0].data}°</b>`,
     },
     xAxis: xAxis(hours, false, th),
     yAxis: {

@@ -18,10 +18,7 @@ export type TimedForecast = ForecastHour & { t: number };
 export const num = (v: unknown): number => (typeof v === "number" ? v : 0);
 
 /** Split a full forecast into up-to-PAGES pages of PER_PAGE hourly points from now. */
-export function paginate(
-  forecast: ForecastHour[],
-  now: number,
-): TimedForecast[][] {
+export function paginate(forecast: ForecastHour[], now: number): TimedForecast[][] {
   const start = Math.floor(now / HOUR) * HOUR;
   const upcoming = forecast
     .map((f) => ({ ...f, t: Date.parse(f.datetime) }))

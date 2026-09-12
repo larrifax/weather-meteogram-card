@@ -5,13 +5,6 @@ import { LineChart, BarChart, ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { SVGRenderer } from "echarts/renderers";
 
-use([
-  LineChart,
-  BarChart,
-  ScatterChart,
-  GridComponent,
-  TooltipComponent,
-  SVGRenderer,
-]);
+use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, SVGRenderer]);
 
 export { init, connect };

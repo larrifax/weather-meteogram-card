@@ -7,11 +7,7 @@ customElements.define(CARD_NAME, WeatherMeteogramCard);
 registerCustomCard({
   type: CARD_NAME,
   name: "Weather Meteogram Card",
-  description:
-    "DMI-style hourly meteogram (icons + ECharts temp/precip/wind) with 12h paging.",
+  description: "DMI-style hourly meteogram (icons + ECharts temp/precip/wind) with 12h paging.",
 });
 
-console.info(
-  "%c WEATHER-METEOGRAM-CARD ",
-  "color: white; background: #4a90d9; font-weight: 700;",
-);
+console.info("%c WEATHER-METEOGRAM-CARD ", "color: white; background: #4a90d9; font-weight: 700;");

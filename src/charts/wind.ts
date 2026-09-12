@@ -3,11 +3,7 @@ import { COL, GRID, type ThemeColors } from "../const";
 import { num, type TimedForecast } from "../forecast";
 import { xAxis } from "./axis";
 
-export function windOption(
-  data: TimedForecast[],
-  hours: string[],
-  th: ThemeColors,
-): EChartsOption {
+export function windOption(data: TimedForecast[], hours: string[], th: ThemeColors): EChartsOption {
   const speed = data.map((f) => num(f.wind_speed));
   // Stack trick: base = speed line, delta = gust-speed stacked with areaStyle, so
   // the shaded area fills the speed→gust range.

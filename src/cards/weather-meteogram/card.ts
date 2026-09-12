@@ -2,11 +2,7 @@ import type { ECharts } from "echarts/core";
 import * as echarts from "../../echarts";
 import type { LovelaceCard } from "custom-card-helpers";
 import { GRID, ICONS, type ThemeColors } from "../../const";
-import {
-  paginate,
-  type ForecastHour,
-  type TimedForecast,
-} from "../../forecast";
+import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
 import type { ChartKey, ForecastEvent, Hass } from "../../ha-dom";
 import { tempOption } from "../../charts/temp";
 import { precipOption } from "../../charts/precip";
@@ -52,9 +48,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   }
 
   public static getStubConfig(hass: Hass): MeteogramConfig {
-    const weather = Object.keys(hass.states).find((e) =>
-      e.startsWith("weather."),
-    );
+    const weather = Object.keys(hass.states).find((e) => e.startsWith("weather."));
     return {
       type: `custom:${CARD_NAME}`,
       entity: weather ?? "weather.home",
@@ -124,9 +118,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     try {
       await this._ensure();
     } catch (e) {
-      this._error(
-        "Kunne ikke laste ECharts: " + String((e as Error).message ?? e),
-      );
+      this._error("Kunne ikke laste ECharts: " + String((e as Error).message ?? e));
       return;
     }
     this._render();
@@ -165,8 +157,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     const w = el.temp.clientWidth || el.wrap.clientWidth;
     const avail = el.wrap.clientHeight - el.icons.offsetHeight;
     if (w <= 0 || avail <= 0) return;
-    const total =
-      CHART_WEIGHTS.temp + CHART_WEIGHTS.precip + CHART_WEIGHTS.wind;
+    const total = CHART_WEIGHTS.temp + CHART_WEIGHTS.precip + CHART_WEIGHTS.wind;
     (Object.keys(this._charts) as ChartKey[]).forEach((k) => {
       const h = Math.floor((avail * CHART_WEIGHTS[k]) / total);
       el[k].style.height = h + "px";
@@ -205,8 +196,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         .dot { width:8px; height:8px; border-radius:50%; background:var(--disabled-text-color); cursor:pointer; }
         .dot.on { background:var(--primary-color); }
       </style>`;
-    const q = <T extends HTMLElement>(sel: string) =>
-      this.querySelector(sel) as T;
+    const q = <T extends HTMLElement>(sel: string) => this.querySelector(sel) as T;
     this._el = {
       wrap: q(".wrap"),
       icons: q(".icons"),
@@ -236,11 +226,9 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       }
     };
     let x0: number | null = null;
-    this._el.wrap.addEventListener(
-      "touchstart",
-      (e) => (x0 = e.touches[0].clientX),
-      { passive: true },
-    );
+    this._el.wrap.addEventListener("touchstart", (e) => (x0 = e.touches[0].clientX), {
+      passive: true,
+    });
     this._el.wrap.addEventListener("touchend", (e) => {
       if (x0 == null) return;
       const dx = e.changedTouches[0].clientX - x0;
@@ -267,9 +255,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     this._pages = pages;
     this._page = Math.min(this._page, pages.length - 1);
     const data = pages[this._page];
-    const hours = data.map((f) =>
-      String(new Date(f.t).getHours()).padStart(2, "0"),
-    );
+    const hours = data.map((f) => String(new Date(f.t).getHours()).padStart(2, "0"));
     const th = this._themeColors();
 
     this._el.icons.innerHTML = data
@@ -295,10 +281,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     requestAnimationFrame(() => this._sizeCharts());
 
     this._el.dots.innerHTML = pages
-      .map(
-        (_, i) =>
-          `<span class="dot ${i === this._page ? "on" : ""}" data-p="${i}"></span>`,
-      )
+      .map((_, i) => `<span class="dot ${i === this._page ? "on" : ""}" data-p="${i}"></span>`)
       .join("");
     this._el.prev.disabled = this._page === 0;
     this._el.next.disabled = this._page === pages.length - 1;

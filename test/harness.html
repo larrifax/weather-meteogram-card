@@ -8,14 +8,11 @@
     <div id="host" style="width: 703px; height: 320px"></div>
     <script>
       for (const tag of ["ha-card", "ha-icon", "ha-icon-button", "ha-form"]) {
-        if (!customElements.get(tag))
-          customElements.define(tag, class extends HTMLElement {});
+        if (!customElements.get(tag)) customElements.define(tag, class extends HTMLElement {});
       }
       const now = Date.now();
       const forecast = Array.from({ length: 48 }, (_, i) => ({
-        datetime: new Date(
-          Math.floor(now / 3.6e6) * 3.6e6 + i * 3.6e6,
-        ).toISOString(),
+        datetime: new Date(Math.floor(now / 3.6e6) * 3.6e6 + i * 3.6e6).toISOString(),
         condition: ["cloudy", "partlycloudy", "rainy", "sunny"][i % 4],
         temperature: 8 + 5 * Math.sin(i / 4),
         precipitation: i % 5 === 0 ? 1.2 : 0,

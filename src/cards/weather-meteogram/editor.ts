@@ -14,10 +14,7 @@ const EDITOR_SCHEMA = [
 
 const LABELS: Record<string, string> = { entity: "Værenhet", title: "Tittel" };
 
-export class WeatherMeteogramCardEditor
-  extends HTMLElement
-  implements LovelaceCardEditor
-{
+export class WeatherMeteogramCardEditor extends HTMLElement implements LovelaceCardEditor {
   private _hass?: Hass;
   private _config?: MeteogramConfig;
   private _form?: any;
@@ -36,8 +33,7 @@ export class WeatherMeteogramCardEditor
     if (!this._hass || !this._config) return;
     if (!this._form) {
       this._form = document.createElement("ha-form");
-      this._form.computeLabel = (s: { name: string }) =>
-        LABELS[s.name] ?? s.name;
+      this._form.computeLabel = (s: { name: string }) => LABELS[s.name] ?? s.name;
       this._form.addEventListener("value-changed", (e: CustomEvent) => {
         this.dispatchEvent(
           new CustomEvent("config-changed", {

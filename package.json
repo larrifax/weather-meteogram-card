@@ -2,20 +2,22 @@
   "name": "weather-meteogram-card",
   "version": "0.1.0",
   "description": "DMI-style hourly weather meteogram card for Home Assistant (Apache ECharts).",
+  "license": "MIT",
+  "author": "Kristian Tryggestad",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ktryggestad/weather-meteogram-card"
+  },
   "type": "module",
   "scripts": {
     "build": "vite build",
     "watch": "vite build --watch",
     "start": "concurrently --kill-others --names build,serve \"vite build --watch\" \"vite preview\"",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write ."
+    "lint": "oxlint",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check ."
   },
-  "author": "Kristian Tryggestad",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ktryggestad/weather-meteogram-card"
-  },
-  "license": "MIT",
   "dependencies": {
     "custom-card-helpers": "^1.9.0",
     "echarts": "^5.5.1"
@@ -23,8 +25,9 @@
   "devDependencies": {
     "browserslist-to-esbuild": "^2.1.1",
     "concurrently": "^9.1.0",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
     "playwright": "^1.63.0",
-    "prettier": "^3.3.3",
     "terser": "^5.31.6",
     "typescript": "^5.6.2",
     "vite": "^5.4.5"
