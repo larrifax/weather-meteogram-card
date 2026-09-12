@@ -7,7 +7,7 @@ export default defineConfig({
   define: { "process.env.NODE_ENV": JSON.stringify("production") },
   build: {
     target: browserslistToEsbuild(),
-    minify: "terser",
+    minify: "esbuild",
     lib: {
       entry: "src/weather-meteogram-card.ts",
       formats: ["es"],
