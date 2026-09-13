@@ -49,6 +49,7 @@ function tooltipFormatter(data: TimedForecast[]) {
 export function meteogramOption(
   data: TimedForecast[],
   hours: string[],
+  icons: string[],
   th: ThemeColors,
   bounds: AxisBounds,
 ): EChartsOption {
@@ -62,6 +63,9 @@ export function meteogramOption(
     Math.max(0, num(f.wind_gust_speed ?? f.wind_speed) - num(f.wind_speed)),
   );
   const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: num(f.wind_bearing) + 180 }));
+  // Condition icons ride at the top of the temp grid, one per hour. Each point
+  // carries its own image:// symbol; the value pins them to the grid top edge.
+  const iconData = icons.map((sym, i) => ({ value: [i, bounds.tempMax], symbol: sym }));
 
   return {
     animation: false,
@@ -186,6 +190,18 @@ export function meteogramOption(
         lineStyle: { opacity: 0 },
         areaStyle: { color: COL.wind, opacity: 0.3 },
         z: 2,
+      },
+      {
+        name: "Vær",
+        type: "scatter",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: iconData,
+        symbolSize: 24,
+        // Sit just under the grid's top edge instead of straddling it.
+        symbolOffset: [0, "60%"],
+        silent: true,
+        z: 5,
       },
       {
         name: "Retning",
