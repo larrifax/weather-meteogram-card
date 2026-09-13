@@ -23,6 +23,7 @@
       }));
       window.__hass = {
         states: { "weather.test": {} },
+        config: { latitude: 59.02, longitude: 6.66 },
         connection: {
           subscribeMessage(cb) {
             setTimeout(() => cb({ forecast }), 0);
@@ -30,6 +31,27 @@
           },
         },
       };
+      // Mock the Open-Meteo archive fetch so the climate path runs offline.
+      const days = 3650;
+      window.fetch = async () => ({
+        ok: true,
+        json: async () => {
+          const time = [],
+            tmin = [],
+            tmax = [],
+            precipitation_sum = [];
+          for (let i = 0; i < days; i++) {
+            const d = new Date(Date.now() - i * 8.64e7);
+            time.push(d.toISOString().slice(0, 10));
+            tmin.push(2 + 3 * Math.sin(i));
+            tmax.push(14 + 3 * Math.sin(i));
+            precipitation_sum.push(i % 7 === 0 ? 8 : 0.5);
+          }
+          return {
+            daily: { time, temperature_2m_min: tmin, temperature_2m_max: tmax, precipitation_sum },
+          };
+        },
+      });
     </script>
     <script type="module">
       import "../dist/weather-meteogram-card.js";

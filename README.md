@@ -34,13 +34,14 @@ entity: weather.your_weather_entity
 title: Vær
 ```
 
-| Option       | Type   | Default | Description                              |
-| ------------ | ------ | ------- | ---------------------------------------- |
-| `entity`     | string | —       | A `weather.*` entity (required).         |
-| `title`      | string | `Vær`   | Header title.                            |
-| `temp_min`   | number | auto    | Pin the temperature axis minimum (°).    |
-| `temp_max`   | number | auto    | Pin the temperature axis maximum (°).    |
-| `precip_max` | number | auto    | Pin the precipitation axis maximum (mm). |
+| Option                | Type    | Default | Description                                             |
+| --------------------- | ------- | ------- | ------------------------------------------------------- |
+| `entity`              | string  | —       | A `weather.*` entity (required).                        |
+| `title`               | string  | `Vær`   | Header title.                                           |
+| `use_climate_normals` | boolean | `true`  | Widen axes with seasonal normals for the home location. |
+| `temp_min`            | number  | auto    | Pin the temperature axis minimum (°).                   |
+| `temp_max`            | number  | auto    | Pin the temperature axis maximum (°).                   |
+| `precip_max`          | number  | auto    | Pin the precipitation axis maximum (mm).                |
 
 The card is also configurable from the visual editor.
 
@@ -48,9 +49,16 @@ The card is also configurable from the visual editor.
 
 By default the axes are derived from the **whole forecast** (not just the visible
 12 h) and snapped to round steps, so they stay steady as you page between periods
-and only shift when the data crosses a step boundary. Because the source is the
-location's own forecast, the scale already follows the local season. To anchor the
-axes to your own climate normals instead, set `temp_min` / `temp_max` / `precip_max`.
+and only shift when the data crosses a step boundary.
+
+To keep the scale representative even when a period is quiet, the axes are also
+widened with **seasonal climate normals** for the current month at your Home
+location (`hass.config.latitude/longitude`). These come from the free
+[Open-Meteo archive API](https://open-meteo.com/) (~10 years of daily data, cached
+in the browser for a month) and only ever _widen_ the range — an extreme forecast
+is never clipped. Set `use_climate_normals: false` to disable the network call, or
+pin `temp_min` / `temp_max` / `precip_max` to hard-code your own normals (an
+explicit value always wins).
 
 ### Sizing
 

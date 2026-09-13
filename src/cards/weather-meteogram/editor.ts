@@ -12,6 +12,7 @@ const EDITOR_SCHEMA = [
     selector: { entity: { domain: "weather" } },
   },
   { name: "title", selector: { text: {} } },
+  { name: "use_climate_normals", selector: { boolean: {} } },
   {
     name: "",
     type: "grid",
@@ -26,6 +27,7 @@ const EDITOR_SCHEMA = [
 const LABELS: Record<string, string> = {
   entity: "Værenhet",
   title: "Tittel",
+  use_climate_normals: "Bruk klimanormaler",
   temp_min: "Min temp (°)",
   temp_max: "Maks temp (°)",
   precip_max: "Maks nedbør (mm)",

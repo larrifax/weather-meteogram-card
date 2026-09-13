@@ -43,4 +43,21 @@ assert.equal(b.precipMax, 20);
 b = computeBounds([]);
 assert.deepEqual(b, { tempMin: 0, tempMax: 10, precipMax: 4, windMax: 10 });
 
+// A climate normal widens the axes beyond a quiet forecast...
+b = computeBounds(hours([10, 11]), {}, { tempMin: -8, tempMax: 24, precipMax: 15 });
+assert.equal(b.tempMin, -10, "climate widens tempMin down");
+assert.equal(b.tempMax, 25, "climate widens tempMax up");
+assert.equal(b.precipMax, 16, "climate widens precipMax");
+
+// ...but never clips a forecast that is more extreme than the normal.
+b = computeBounds(hours([-15, 30], [40]), {}, { tempMin: 0, tempMax: 20, precipMax: 5 });
+assert.ok(b.tempMin <= -15, "forecast colder than normal is kept");
+assert.ok(b.tempMax >= 30, "forecast warmer than normal is kept");
+assert.ok(b.precipMax >= 40, "forecast wetter than normal is kept");
+
+// Explicit overrides still win over the climate normal.
+b = computeBounds(hours([10]), { tempMin: 3, tempMax: 18 }, { tempMin: -20, tempMax: 40 });
+assert.equal(b.tempMin, 3, "override beats climate (min)");
+assert.equal(b.tempMax, 18, "override beats climate (max)");
+
 console.log("bounds.test.mjs: PASS");

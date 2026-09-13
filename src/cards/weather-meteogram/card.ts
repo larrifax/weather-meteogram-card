@@ -5,7 +5,8 @@ import { GRID, ICONS, type ThemeColors } from "../../const";
 import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
 import type { ForecastEvent, Hass } from "../../ha-dom";
 import { meteogramOption } from "../../charts/meteogram";
-import { computeBounds, type BoundsOverrides } from "../../charts/bounds";
+import { computeBounds, type BoundsOverrides, type ClimateNormal } from "../../charts/bounds";
+import { fetchClimateNormal } from "../../charts/climate";
 import { CARD_NAME, EDITOR_NAME } from "./const";
 import type { MeteogramConfig } from "./config";
 import "./editor";
@@ -24,6 +25,9 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _entity?: string;
   private _title = "Vær";
   private _bounds: BoundsOverrides = {};
+  private _useClimate = true;
+  private _climate?: ClimateNormal;
+  private _climateKey?: string;
   private _page = 0;
   private _forecast: ForecastHour[] = [];
   private _pages: TimedForecast[][] = [];
@@ -57,6 +61,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       tempMax: config.temp_max,
       precipMax: config.precip_max,
     };
+    this._useClimate = config.use_climate_normals ?? true;
     this._page = 0;
     void this._update();
   }
@@ -119,6 +124,23 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       return;
     }
     this._render();
+    void this._ensureClimate();
+  }
+
+  // Fetch seasonal normals once per location; re-render when they arrive. Failures
+  // are silent — the axes just fall back to forecast-only bounds.
+  private async _ensureClimate(): Promise<void> {
+    if (!this._useClimate || !this._hass) return;
+    const { latitude, longitude } = this._hass.config ?? {};
+    if (typeof latitude !== "number" || typeof longitude !== "number") return;
+    const key = `${latitude},${longitude}`;
+    if (key === this._climateKey) return;
+    this._climateKey = key;
+    const normal = await fetchClimateNormal(latitude, longitude);
+    if (normal) {
+      this._climate = normal;
+      this._render();
+    }
   }
 
   private _ensure(): Promise<void> {
@@ -233,7 +255,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     if (!pages.length) return;
     // Bounds over the whole forecast (all pages), not just the current one, so
     // the axes hold steady as the user swipes between periods.
-    const bounds = computeBounds(pages.flat(), this._bounds);
+    const bounds = computeBounds(pages.flat(), this._bounds, this._climate);
     this._pages = pages;
     this._page = Math.min(this._page, pages.length - 1);
     const data = pages[this._page];

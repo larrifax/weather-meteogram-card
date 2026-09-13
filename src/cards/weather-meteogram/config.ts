@@ -7,4 +7,6 @@ export interface MeteogramConfig extends LovelaceCardConfig {
   temp_min?: number;
   temp_max?: number;
   precip_max?: number;
+  // Widen axes with seasonal normals fetched for the home location (default on).
+  use_climate_normals?: boolean;
 }
