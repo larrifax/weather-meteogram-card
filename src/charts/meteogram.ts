@@ -12,13 +12,25 @@ const GRIDS = [
   { top: "72%", height: "16%" }, // wind
 ].map((g) => ({ left: GRID.left, right: GRID.right, ...g }));
 
+const DATE_FMT = new Intl.DateTimeFormat("nb-NO", { weekday: "short", day: "numeric" });
+
 function xAxis(
   hours: string[],
   gridIndex: number,
   showLabels: boolean,
   th: ThemeColors,
   position?: "top" | "bottom",
+  // When given (top axis), stamp the date above the hour at each day boundary.
+  times?: number[],
 ) {
+  const dateLabel =
+    times &&
+    ((_v: string, i: number): string => {
+      const d = new Date(times[i]);
+      const boundary = i === 0 || d.getDate() !== new Date(times[i - 1]).getDate();
+      const hh = String(d.getHours()).padStart(2, "0");
+      return boundary ? `{d|${DATE_FMT.format(d)}}\n${hh}` : hh;
+    });
   return {
     type: "category" as const,
     gridIndex,
@@ -27,7 +39,17 @@ function xAxis(
     ...(position ? { position } : {}),
     axisLine: { show: false },
     axisTick: { show: showLabels, alignWithLabel: true },
-    axisLabel: { show: showLabels, fontSize: 10, color: th.sec },
+    axisLabel: {
+      show: showLabels,
+      fontSize: 10,
+      color: th.sec,
+      ...(dateLabel
+        ? {
+            formatter: dateLabel,
+            rich: { d: { fontSize: 10, fontWeight: "bold", color: th.sec, padding: [0, 0, 3, 0] } },
+          }
+        : {}),
+    },
   };
 }
 
@@ -69,6 +91,7 @@ export function meteogramOption(
     Math.max(0, num(f.wind_gust_speed ?? f.wind_speed) - num(f.wind_speed)),
   );
   const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: num(f.wind_bearing) + 180 }));
+  const times = data.map((f) => f.t);
   // Condition icons are NOT an ECharts symbol series: image:// symbols rasterize
   // to a static <image>, killing the SVGs' built-in SMIL animation. The card
   // overlays real <img> elements over the chart instead (see card.ts).
@@ -98,7 +121,7 @@ export function meteogramOption(
     // pushing the narrow mm bar off the band center vs the line points. A solo bar
     // per axis centers on its band, so mm bar, prob bar and line all line up.
     xAxis: [
-      xAxis(hours, 0, true, th, "top"),
+      xAxis(hours, 0, true, th, "top", times),
       xAxis(hours, 1, true, th),
       xAxis(hours, 0, false, th),
     ],
