@@ -1,7 +1,7 @@
 import type { ECharts } from "echarts/core";
 import * as echarts from "../../echarts";
 import type { LovelaceCard } from "custom-card-helpers";
-import { GRID, ICONS, type ThemeColors } from "../../const";
+import { ICONS, type ThemeColors } from "../../const";
 import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
 import type { ForecastEvent, Hass } from "../../ha-dom";
 import { meteogramOption } from "../../charts/meteogram";
@@ -13,7 +13,6 @@ import "./editor";
 
 interface Els {
   wrap: HTMLElement;
-  icons: HTMLElement;
   chart: HTMLElement;
   dots: HTMLElement;
   prev: HTMLButtonElement;
@@ -159,12 +158,12 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     return this._ready;
   }
 
-  // Size the single chart to fill the space below the icon row.
+  // Size the single chart to fill the wrap.
   private _sizeChart(): void {
     if (!this._chart || !this._el) return;
     const el = this._el;
     const w = el.chart.clientWidth || el.wrap.clientWidth;
-    const h = el.wrap.clientHeight - el.icons.offsetHeight;
+    const h = el.wrap.clientHeight;
     if (w <= 0 || h <= 0) return;
     el.chart.style.height = h + "px";
     this._chart.resize({ width: w, height: h });
@@ -181,7 +180,6 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
           </span>
         </div>
         <div class="wrap">
-          <div class="icons"></div>
           <div class="chart"></div>
         </div>
         <div class="dots"></div>
@@ -192,9 +190,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         .ttl { font-size:1.1em; font-weight:500; }
         .nav ha-icon-button[disabled] { opacity:.3; pointer-events:none; }
         .wrap { flex:1; min-height:0; display:flex; flex-direction:column; touch-action: pan-y; }
-        .icons { display:flex; padding-left:${GRID.left}px; padding-right:${GRID.right}px; flex:0 0 auto; }
-        .icons > span { flex:1; text-align:center; --mdc-icon-size:22px; color:var(--paper-item-icon-color,#7a8ba0); }
-        .chart { width:100%; }
+        .chart { width:100%; flex:1; min-height:0; }
         .dots { display:flex; gap:6px; justify-content:center; padding:6px 0 4px; }
         .dot { width:8px; height:8px; border-radius:50%; background:var(--disabled-text-color); cursor:pointer; }
         .dot.on { background:var(--primary-color); }
@@ -202,7 +198,6 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     const q = <T extends HTMLElement>(sel: string) => this.querySelector(sel) as T;
     this._el = {
       wrap: q(".wrap"),
-      icons: q(".icons"),
       chart: q(".chart"),
       dots: q(".dots"),
       prev: q(".prev"),
@@ -262,18 +257,13 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     const hours = data.map((f) => String(new Date(f.t).getHours()).padStart(2, "0"));
     const th = this._themeColors();
 
-    this._el.icons.innerHTML = data
-      .map(
-        (f) =>
-          `<span><ha-icon icon="${ICONS[f.condition ?? ""] ?? ICONS.exceptional}"></ha-icon></span>`,
-      )
-      .join("");
+    const icons = data.map((f) => ICONS[f.condition ?? ""] ?? ICONS.exceptional);
 
     // Size the container BEFORE setOption so ECharts lays the series out into a
     // non-zero box; otherwise the grid computes at height 0 and nothing paints.
     this._sizeChart();
     try {
-      this._chart.setOption(meteogramOption(data, hours, th, bounds), true);
+      this._chart.setOption(meteogramOption(data, hours, icons, th, bounds), true);
     } catch (err) {
       console.error("[weather-meteogram] setOption failed:", err);
       this._error("setOption feilet: " + String((err as Error).message ?? err));
