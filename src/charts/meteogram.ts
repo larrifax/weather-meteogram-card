@@ -48,7 +48,14 @@ function xAxis(
       ...(dateLabel
         ? {
             formatter: dateLabel,
-            rich: { d: { fontSize: 10, fontWeight: "bold", color: th.sec, padding: [0, 0, 3, 0] } },
+            rich: {
+              d: {
+                fontSize: 10,
+                fontWeight: "bold" as const,
+                color: th.sec,
+                padding: [0, 0, 3, 0],
+              },
+            },
           }
         : {}),
     },
