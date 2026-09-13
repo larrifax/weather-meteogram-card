@@ -14,10 +14,15 @@ import "./editor";
 interface Els {
   wrap: HTMLElement;
   chart: HTMLElement;
+  icons: HTMLElement;
   dots: HTMLElement;
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
 }
+
+// Icon box size in px. Bumped from the old 24px scatter symbol so the meteocon
+// detail is legible.
+const ICON_PX = 36;
 
 export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _hass?: Hass;
@@ -37,6 +42,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _chart?: ECharts;
   private _ro?: ResizeObserver;
   private _el?: Els;
+  private _iconTop = 0;
 
   public static getConfigElement(): HTMLElement {
     return document.createElement(EDITOR_NAME);
@@ -167,6 +173,22 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     if (w <= 0 || h <= 0) return;
     el.chart.style.height = h + "px";
     this._chart.resize({ width: w, height: h });
+    this._positionIcons();
+  }
+
+  // Place each overlaid icon over its hour, just under the top grid's edge.
+  // convertToPixel maps [category index, temp value] -> chart pixels; the icon
+  // sits at the top temperature bound, matching the old scatter series.
+  private _positionIcons(): void {
+    if (!this._chart || !this._el) return;
+    const imgs = this._el.icons.children;
+    for (let i = 0; i < imgs.length; i++) {
+      const px = this._chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [i, this._iconTop]);
+      if (!px) continue;
+      const img = imgs[i] as HTMLElement;
+      img.style.left = px[0] + "px";
+      img.style.top = px[1] + ICON_PX / 2 + "px";
+    }
   }
 
   private _build(): void {
@@ -181,6 +203,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         </div>
         <div class="wrap">
           <div class="chart"></div>
+          <div class="icons"></div>
         </div>
         <div class="dots"></div>
       </ha-card>
@@ -189,8 +212,11 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         .hdr { display:flex; align-items:center; justify-content:space-between; padding:0 12px; }
         .ttl { font-size:1.1em; font-weight:500; }
         .nav ha-icon-button[disabled] { opacity:.3; pointer-events:none; }
-        .wrap { flex:1; min-height:0; display:flex; flex-direction:column; touch-action: pan-y; }
+        .wrap { flex:1; min-height:0; display:flex; flex-direction:column; position:relative; touch-action: pan-y; }
         .chart { width:100%; flex:1; min-height:0; }
+        /* Animated condition icons overlaid on the chart; positioned in JS. */
+        .icons { position:absolute; inset:0; pointer-events:none; }
+        .icons img { position:absolute; width:${ICON_PX}px; height:${ICON_PX}px; transform:translate(-50%,-50%); }
         .dots { display:flex; gap:6px; justify-content:center; padding:6px 0 4px; }
         .dot { width:8px; height:8px; border-radius:50%; background:var(--disabled-text-color); cursor:pointer; }
         .dot.on { background:var(--primary-color); }
@@ -199,6 +225,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     this._el = {
       wrap: q(".wrap"),
       chart: q(".chart"),
+      icons: q(".icons"),
       dots: q(".dots"),
       prev: q(".prev"),
       next: q(".next"),
@@ -257,18 +284,25 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     const hours = data.map((f) => String(new Date(f.t).getHours()).padStart(2, "0"));
     const th = this._themeColors();
 
-    const icons = data.map((f) => ICONS[f.condition ?? ""] ?? ICONS.exceptional);
-
     // Size the container BEFORE setOption so ECharts lays the series out into a
     // non-zero box; otherwise the grid computes at height 0 and nothing paints.
     this._sizeChart();
     try {
-      this._chart.setOption(meteogramOption(data, hours, icons, th, bounds), true);
+      this._chart.setOption(meteogramOption(data, hours, th, bounds), true);
     } catch (err) {
       console.error("[weather-meteogram] setOption failed:", err);
       this._error("setOption feilet: " + String((err as Error).message ?? err));
       return;
     }
+    // Animated <img> icons overlaid on the top grid, one per hour. Kept as real
+    // DOM (not an ECharts symbol) so the meteocons' SMIL animation runs.
+    this._el.icons.innerHTML = data
+      .map((f) => {
+        const src = ICONS[f.condition ?? ""] ?? ICONS.exceptional;
+        return `<img src="${src}" alt="${f.condition ?? ""}">`;
+      })
+      .join("");
+    this._iconTop = bounds.tempMax;
     // If the first paint happened before layout settled, size once more next frame.
     requestAnimationFrame(() => this._sizeChart());
 

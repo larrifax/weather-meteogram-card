@@ -55,8 +55,8 @@ const report = await page.evaluate(() => {
     paths: svg?.querySelectorAll("path").length ?? -1,
     texts: svg?.querySelectorAll("text").length ?? -1,
     dots: q(".dots")?.childElementCount,
-    // Meteocons render as <image> symbols inside the chart grid, one per hour.
-    icons: svg?.querySelectorAll("image").length ?? -1,
+    // Meteocons are overlaid as animated <img> elements, one per hour.
+    icons: q(".icons")?.querySelectorAll("img").length ?? -1,
     error: card.querySelector('[style*="error"]')?.textContent ?? null,
   };
 });
