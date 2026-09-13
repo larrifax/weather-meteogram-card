@@ -19,21 +19,25 @@ const SVG: Record<string, string> = {
   "not-available": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHBhdGggZmlsbD0iIzM3NDE1MSIgZD0iTTI2LjEgMjQuMDhhLjgzLjgzIDAgMDEuMTYuNTZ2MTMuNDhhLjU5LjU5IDAgMDEtLjcyLjcxaC0xLjJhLjc1Ljc1IDAgMDEtLjY5LS4zNWwtNS4xNC03LjZhMTEuNjIgMTEuNjIgMCAwMS0uODUtMS41IDE5LjcwOCAxOS43MDggMCAwMS0uODctMi4wM2gtLjEzczAgLjIzLjEyLjY2LjE1IDEgLjIzIDEuNjRhMTggMTggMCAwMS4xMSAxLjg4djYuNTlhLjc3Ljc3IDAgMDEtLjE2LjU2Ljc5Ljc5IDAgMDEtLjU1LjE1SDE1LjNhLjg1Ljg1IDAgMDEtLjU3LS4xNS43Ni43NiAwIDAxLS4xNy0uNTZWMjQuNjRhLjc4Ljc4IDAgMDEuMTctLjU2Ljg1Ljg1IDAgMDEuNTctLjE1aDEuMTlhLjgxLjgxIDAgMDEuNy4zM2w1LjEgNy41NmExMyAxMyAwIDAxLjg5IDEuNTZjLjI3LjU1LjQ4IDEgLjYzIDEuNDFzLjIzLjU5LjI0LjZoLjEzczAtLjI1LS4xMi0uNjctLjE1LTEtLjIzLTEuNjNhMTYuMTEgMTYuMTEgMCAwMS0uMTEtMS45NHYtNi41MWEuODMuODMgMCAwMS4xNS0uNTYuODIuODIgMCAwMS41Ni0uMTVoMS4xMWEuODIuODIgMCAwMS41Ni4xNXpNMzAuNDcgNDBhMSAxIDAgMDEtLjU0LjEyaC0xLjE3Yy0uMjQgMC0uNC0uMDUtLjQ2LS4xNGEuNDMuNDMgMCAwMTAtLjQ0bDUuNTgtMTVhMS4xNiAxLjE2IDAgMDEuMzMtLjQ2Ljk0Ljk0IDAgMDEuNTMtLjEySDM2Yy4yNCAwIC4zOS4wNS40NS4xNGEuNS41IDAgMDEwIC40NGwtNS41OSAxNWExLjA2IDEuMDYgMCAwMS0uMzkuNDZ6TTQ4Ljg5IDM4LjgzSDQ3LjhhMi40IDIuNCAwIDAxLS45MS0uMTIuNzguNzggMCAwMS0uMzktLjUxbC0xLTIuN2gtNS43NmwtMSAyLjdhLjc4Ljc4IDAgMDEtLjM5LjUxIDIuNCAyLjQgMCAwMS0uOTEuMTJoLTFxLS43MyAwLS40OC0uNjlsNS4yNS0xMy42NWExLjA3IDEuMDcgMCAwMS4zMy0uNDcgMSAxIDAgMDEuNTUtLjExaDEuMTFhMS4wNiAxLjA2IDAgMDEuNTcuMTEuOS45IDAgMDEuMzIuNDVsNS4yNCAxMy42N3EuMy42OS0uNDQuNjl6bS02LTExLjEzYy0uMDktLjQzLS4xNC0uNzYtLjE3LTF2LS4zNmgtLjE1YTcuNzMgNy43MyAwIDAxLS40NiAyLjU0bC0xLjYyIDQuNDVoNC4zMWwtMS42LTQuNDNhMTAgMTAgMCAwMS0uMzEtMS4yeiIvPjwvc3ZnPg==",
 };
 
-/** HA weather condition slug -> ECharts `image://` symbol (meteocons fill). */
+/**
+ * HA weather condition slug -> raw SVG data URI (meteocons fill). Used as an
+ * <img src>, not an ECharts image:// symbol, so the SVGs' built-in SMIL
+ * animation plays — a rasterized image:// symbol would freeze on frame one.
+ */
 export const ICONS: Record<string, string> = {
-  "clear-night": "image://" + SVG["clear-night"],
-  cloudy: "image://" + SVG["overcast"],
-  fog: "image://" + SVG["fog"],
-  hail: "image://" + SVG["hail"],
-  lightning: "image://" + SVG["thunderstorms"],
-  "lightning-rainy": "image://" + SVG["thunderstorms-rain"],
-  partlycloudy: "image://" + SVG["partly-cloudy-day"],
-  pouring: "image://" + SVG["rain"],
-  rainy: "image://" + SVG["rain"],
-  snowy: "image://" + SVG["snow"],
-  "snowy-rainy": "image://" + SVG["sleet"],
-  sunny: "image://" + SVG["clear-day"],
-  windy: "image://" + SVG["wind"],
-  "windy-variant": "image://" + SVG["wind"],
-  exceptional: "image://" + SVG["not-available"],
+  "clear-night": SVG["clear-night"],
+  cloudy: SVG["overcast"],
+  fog: SVG["fog"],
+  hail: SVG["hail"],
+  lightning: SVG["thunderstorms"],
+  "lightning-rainy": SVG["thunderstorms-rain"],
+  partlycloudy: SVG["partly-cloudy-day"],
+  pouring: SVG["rain"],
+  rainy: SVG["rain"],
+  snowy: SVG["snow"],
+  "snowy-rainy": SVG["sleet"],
+  sunny: SVG["clear-day"],
+  windy: SVG["wind"],
+  "windy-variant": SVG["wind"],
+  exceptional: SVG["not-available"],
 };

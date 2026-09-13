@@ -43,10 +43,15 @@ out += "// prettier-ignore\n";
 out += "const SVG: Record<string, string> = {\n";
 for (const f of files) out += `  ${JSON.stringify(f)}: ${JSON.stringify(uris[f])},\n`;
 out += "};\n\n";
-out += "/** HA weather condition slug -> ECharts `image://` symbol (meteocons fill). */\n";
+out +=
+  "/**\n" +
+  " * HA weather condition slug -> raw SVG data URI (meteocons fill). Used as an\n" +
+  " * <img src>, not an ECharts image:// symbol, so the SVGs' built-in SMIL\n" +
+  " * animation plays — a rasterized image:// symbol would freeze on frame one.\n" +
+  " */\n";
 out += "export const ICONS: Record<string, string> = {\n";
 for (const [cond, f] of Object.entries(MAP)) {
-  out += `  ${JSON.stringify(cond)}: "image://" + SVG[${JSON.stringify(f)}],\n`;
+  out += `  ${JSON.stringify(cond)}: SVG[${JSON.stringify(f)}],\n`;
 }
 out += "};\n";
 
