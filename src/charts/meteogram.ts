@@ -164,7 +164,7 @@ export function meteogramOption(
         type: "value",
         min: 0,
         max: bounds.windMax,
-        axisLabel: { fontSize: 10, color: th.sec },
+        axisLabel: { show: false },
         splitLine: faintSplit,
       },
     ],
