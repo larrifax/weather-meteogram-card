@@ -26,6 +26,8 @@ function xAxis(
   const dateLabel =
     times &&
     ((_v: string, i: number): string => {
+      // Label every other tick; odd ticks keep their blip but show no text.
+      if (i % 2 !== 0) return "";
       const d = new Date(times[i]);
       const boundary = i === 0 || d.getDate() !== new Date(times[i - 1]).getDate();
       const hh = String(d.getHours()).padStart(2, "0");
