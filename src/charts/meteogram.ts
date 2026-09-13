@@ -248,7 +248,9 @@ export function meteogramOption(
         data: arrows,
         symbol: "path://M0,-5 L-3,4 L0,2 L3,4 Z",
         symbolSize: 11,
-        symbolOffset: [0, -9],
+        // Anchored at the wind grid bottom axis (y=0); push down past the hour
+        // labels so arrows render below them, not inside the chart band.
+        symbolOffset: [0, 22],
         itemStyle: { color: th.sec },
         silent: true,
         z: 4,
