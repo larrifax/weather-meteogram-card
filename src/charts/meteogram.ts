@@ -74,6 +74,18 @@ export function meteogramOption(
       axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
       formatter: tooltipFormatter(data),
     },
+    // Color the temp line by value: red above 4°C, blue at/below. Piecewise
+    // visualMap paints each line segment from its y-value; seriesIndex 0 = temp.
+    visualMap: {
+      show: false,
+      type: "piecewise",
+      seriesIndex: 0,
+      dimension: 1,
+      pieces: [
+        { gt: 4, color: COL.tempWarm },
+        { lte: 4, color: COL.tempCold },
+      ],
+    },
     // Index 2: hidden twin of axis 0 (same top grid) for the probability bar.
     // Two differently-sized bars on one category axis get edge-aligned by barGap,
     // pushing the narrow mm bar off the band center vs the line points. A solo bar
