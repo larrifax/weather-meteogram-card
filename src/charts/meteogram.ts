@@ -131,7 +131,7 @@ export function meteogramOption(
     // per axis centers on its band, so mm bar, prob bar and line all line up.
     xAxis: [
       xAxis(hours, 0, true, th, "top", times),
-      xAxis(hours, 1, true, th),
+      xAxis(hours, 1, false, th),
       xAxis(hours, 0, false, th),
     ],
     yAxis: [
@@ -164,7 +164,7 @@ export function meteogramOption(
         type: "value",
         min: 0,
         max: bounds.windMax,
-        axisLabel: { show: false },
+        axisLabel: { fontSize: 10, color: th.sec },
         splitLine: faintSplit,
       },
     ],
