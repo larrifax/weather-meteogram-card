@@ -57,6 +57,19 @@ const report = await page.evaluate(() => {
     // Meteocons are overlaid as animated <img> elements, one per hour.
     icons: q(".icons")?.querySelectorAll("img").length ?? -1,
     error: card.querySelector('[style*="error"]')?.textContent ?? null,
+    // visualMap colors the temp line by value: it renders as an SVG
+    // linearGradient running from tempWarm (#e34a4a) to tempCold (#4a90d9).
+    // If the VisualMapComponent isn't registered in echarts.ts, the option is
+    // silently ignored and the line falls back to a flat stroke (no gradient,
+    // no warm color) — this guards that regression. Harness temps span ~3–13°,
+    // crossing the 1–7° band, so both endpoints must appear.
+    tempGradient: (() => {
+      const stops = [...(svg?.querySelectorAll("linearGradient stop") ?? [])].map((s) =>
+        s.getAttribute("stop-color"),
+      );
+      const has = (r, g, b) => stops.some((c) => c === `rgb(${r},${g},${b})`);
+      return { warm: has(227, 74, 74), cold: has(74, 144, 217), stops: stops.length };
+    })(),
   };
 });
 
@@ -87,6 +100,8 @@ const ok =
   report.texts > 10 &&
   report.icons === 12 &&
   tooltipCount === 1 &&
+  report.tempGradient.warm &&
+  report.tempGradient.cold &&
   !report.error;
 console.log(ok ? "VERIFY: PASS" : "VERIFY: FAIL");
 

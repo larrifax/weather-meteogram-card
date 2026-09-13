@@ -2,7 +2,12 @@
 // uses, via the SVG renderer, instead of pulling the full 2.5 MB bundle.
 import { init, use } from "echarts/core";
 import { LineChart, BarChart, ScatterChart } from "echarts/charts";
-import { GridComponent, TooltipComponent, AxisPointerComponent } from "echarts/components";
+import {
+  GridComponent,
+  TooltipComponent,
+  AxisPointerComponent,
+  VisualMapComponent,
+} from "echarts/components";
 import { SVGRenderer } from "echarts/renderers";
 
 use([
@@ -12,6 +17,9 @@ use([
   GridComponent,
   TooltipComponent,
   AxisPointerComponent,
+  // Colors the temp line by value (continuous gradient). Without this the
+  // visualMap option in meteogram.ts is silently ignored.
+  VisualMapComponent,
   SVGRenderer,
 ]);
 
