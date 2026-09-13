@@ -39,8 +39,12 @@ function xAxis(
     data: hours,
     boundaryGap: true,
     ...(position ? { position } : {}),
-    axisLine: { show: false },
-    axisTick: { show: showLabels, alignWithLabel: true },
+    // onZero:false pins the axis (and its ticks) to the grid edge; without it the
+    // ticks anchor at the value-axis zero line, dropping to the chart bottom.
+    axisLine: { show: false, onZero: false },
+    // interval:0 forces a tick at every hour; the default "auto" drops ticks whose
+    // label is blank (odd hours), leaving a blip only every other tick.
+    axisTick: { show: showLabels, alignWithLabel: true, interval: 0 },
     axisLabel: {
       show: showLabels,
       fontSize: 10,
