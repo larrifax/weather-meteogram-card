@@ -22,7 +22,7 @@ export const ICONS: Record<string, string> = {
 };
 
 export const COL = { temp: "#e8a33d", precip: "#4a90d9", wind: "#607d8b" };
-export const GRID = { left: 40, right: 12 };
+export const GRID = { left: 40, right: 48 };
 
 export interface ThemeColors {
   sec: string;

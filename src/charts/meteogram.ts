@@ -2,13 +2,13 @@ import type { EChartsOption } from "echarts";
 import { COL, GRID, type ThemeColors } from "../const";
 import { num, type TimedForecast } from "../forecast";
 
-// Three stacked grids in ONE chart instance. axisPointer.link keeps the crosshair
-// synced across all three, and a single instance means a single tooltip — which
-// is why this is one option rather than three connected charts.
+// Two stacked grids in ONE chart instance: temperature + precipitation share
+// the top grid (temp on the left y-axis, precip mm on the right), wind sits in
+// the bottom grid. axisPointer.link keeps the crosshair synced across both, and
+// a single instance means a single tooltip.
 const GRIDS = [
-  { top: "4%", height: "32%" }, // temp
-  { top: "41%", height: "27%" }, // precip
-  { top: "73%", height: "16%" }, // wind
+  { top: "6%", height: "56%" }, // temp + precip
+  { top: "72%", height: "16%" }, // wind
 ].map((g) => ({ left: GRID.left, right: GRID.right, ...g }));
 
 function xAxis(hours: string[], gridIndex: number, showLabels: boolean, th: ThemeColors) {
@@ -69,31 +69,31 @@ export function meteogramOption(
       axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
       formatter: tooltipFormatter(data),
     },
-    xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, false, th), xAxis(hours, 2, true, th)],
+    xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, true, th)],
     yAxis: [
-      // 0 — temperature
+      // 0 — temperature (top grid, left axis)
       {
         gridIndex: 0,
         type: "value",
         scale: true,
+        position: "left",
         axisLabel: { formatter: "{value}°", fontSize: 10, color: th.sec },
         splitLine: faintSplit,
       },
-      // 1 — precipitation (mm)
+      // 1 — precipitation mm (top grid, right axis)
       {
-        gridIndex: 1,
+        gridIndex: 0,
         type: "value",
         min: 0,
-        name: "mm",
-        nameTextStyle: { fontSize: 9, color: th.sec },
-        axisLabel: { fontSize: 10, color: th.sec },
-        splitLine: faintSplit,
+        position: "right",
+        axisLabel: { formatter: "{value} mm", fontSize: 10, color: th.sec },
+        splitLine: { show: false },
       },
-      // 2 — precipitation probability (hidden 0–100 scale behind the mm bars)
-      { gridIndex: 1, type: "value", min: 0, max: 100, show: false },
-      // 3 — wind
+      // 2 — precipitation probability (top grid, hidden 0–100 scale behind the bars)
+      { gridIndex: 0, type: "value", min: 0, max: 100, show: false },
+      // 3 — wind (bottom grid)
       {
-        gridIndex: 2,
+        gridIndex: 1,
         type: "value",
         min: 0,
         axisLabel: { fontSize: 10, color: th.sec },
@@ -112,6 +112,7 @@ export function meteogramOption(
         symbolSize: 4,
         lineStyle: { color: COL.temp, width: 2 },
         itemStyle: { color: COL.temp },
+        z: 3,
         label: {
           show: true,
           formatter: (o: any) => `${Math.round(o.value)}°`,
@@ -124,7 +125,7 @@ export function meteogramOption(
       {
         name: "Sannsynlighet",
         type: "bar",
-        xAxisIndex: 1,
+        xAxisIndex: 0,
         yAxisIndex: 2,
         data: prob,
         barWidth: "72%",
@@ -134,7 +135,7 @@ export function meteogramOption(
       {
         name: "Nedbør",
         type: "bar",
-        xAxisIndex: 1,
+        xAxisIndex: 0,
         yAxisIndex: 1,
         data: mm,
         barWidth: "44%",
@@ -152,7 +153,7 @@ export function meteogramOption(
       {
         name: "Vind",
         type: "line",
-        xAxisIndex: 2,
+        xAxisIndex: 1,
         yAxisIndex: 3,
         data: speed,
         stack: "w",
@@ -171,7 +172,7 @@ export function meteogramOption(
       {
         name: "Kast",
         type: "line",
-        xAxisIndex: 2,
+        xAxisIndex: 1,
         yAxisIndex: 3,
         data: delta,
         stack: "w",
@@ -183,7 +184,7 @@ export function meteogramOption(
       {
         name: "Retning",
         type: "scatter",
-        xAxisIndex: 2,
+        xAxisIndex: 1,
         yAxisIndex: 3,
         data: arrows,
         symbol: "path://M0,-5 L-3,4 L0,2 L3,4 Z",
