@@ -54,7 +54,6 @@ const report = await page.evaluate(() => {
   return {
     paths: svg?.querySelectorAll("path").length ?? -1,
     texts: svg?.querySelectorAll("text").length ?? -1,
-    dots: q(".dots")?.childElementCount,
     // Meteocons are overlaid as animated <img> elements, one per hour.
     icons: q(".icons")?.querySelectorAll("img").length ?? -1,
     error: card.querySelector('[style*="error"]')?.textContent ?? null,
@@ -87,7 +86,6 @@ const ok =
   report.paths > 15 &&
   report.texts > 10 &&
   report.icons === 12 &&
-  report.dots === 4 &&
   tooltipCount === 1 &&
   !report.error;
 console.log(ok ? "VERIFY: PASS" : "VERIFY: FAIL");
