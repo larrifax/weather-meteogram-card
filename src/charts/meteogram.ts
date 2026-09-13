@@ -71,7 +71,11 @@ export function meteogramOption(
       axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
       formatter: tooltipFormatter(data),
     },
-    xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, true, th)],
+    // Index 2: hidden twin of axis 0 (same top grid) for the probability bar.
+    // Two differently-sized bars on one category axis get edge-aligned by barGap,
+    // pushing the narrow mm bar off the band center vs the line points. A solo bar
+    // per axis centers on its band, so mm bar, prob bar and line all line up.
+    xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, true, th), xAxis(hours, 0, false, th)],
     yAxis: [
       // 0 — temperature (top grid, left axis). Fixed bounds so the scale holds
       // steady across periods instead of refitting each page.
@@ -127,11 +131,13 @@ export function meteogramOption(
           position: "top",
         },
       },
-      // Faint probability bar behind the solid mm bar (barGap -100% overlays them).
+      // Faint probability bar behind the solid mm bar. Own x-axis (2) so it's the
+      // sole bar on that axis and centers on the band; the mm bar does the same on
+      // axis 0, so the two overlay dead-center under the line points.
       {
         name: "Sannsynlighet",
         type: "bar",
-        xAxisIndex: 0,
+        xAxisIndex: 2,
         yAxisIndex: 2,
         data: prob,
         barWidth: "72%",
@@ -145,7 +151,6 @@ export function meteogramOption(
         yAxisIndex: 1,
         data: mm,
         barWidth: "44%",
-        barGap: "-100%",
         itemStyle: { color: COL.precip },
         z: 2,
         label: {
