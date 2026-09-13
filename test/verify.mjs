@@ -50,30 +50,44 @@ if (!(await page.evaluate(() => !!window.__card))) {
 const report = await page.evaluate(() => {
   const card = window.__card;
   const q = (sel) => card.querySelector(sel);
-  const charts = ["temp", "precip", "wind"].map((k) => {
-    const s = q(`.chart.${k} svg`);
-    return {
-      k,
-      paths: s?.querySelectorAll("path").length ?? -1,
-      texts: s?.querySelectorAll("text").length ?? -1,
-    };
-  });
+  const svg = q(".chart svg");
   return {
-    charts,
+    paths: svg?.querySelectorAll("path").length ?? -1,
+    texts: svg?.querySelectorAll("text").length ?? -1,
     dots: q(".dots")?.childElementCount,
     icons: q(".icons")?.childElementCount,
     error: card.querySelector('[style*="error"]')?.textContent ?? null,
   };
 });
 
+// Hover the chart, then count how many tooltip boxes ECharts renders. One shared
+// tooltip is the whole point of the single-instance refactor.
+const tooltipCount = await (async () => {
+  const box = await page.locator("weather-meteogram-card .chart").boundingBox();
+  if (!box) return -1;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(300);
+  return page.evaluate(() => {
+    const card = window.__card;
+    const tips = [...card.querySelectorAll("div")].filter(
+      (d) =>
+        /position:\s*absolute/.test(d.getAttribute("style") || "") &&
+        /:00/.test(d.textContent || ""),
+    );
+    return tips.length;
+  });
+})();
+
 console.log("pageerrors:", errors.length ? errors : "none");
-console.log(JSON.stringify(report, null, 2));
+console.log(JSON.stringify({ ...report, tooltipCount }, null, 2));
 
 const ok =
   errors.length === 0 &&
-  report.charts.every((c) => c.paths > 5 && c.texts > 0) &&
+  report.paths > 15 &&
+  report.texts > 10 &&
   report.icons === 12 &&
   report.dots === 4 &&
+  tooltipCount === 1 &&
   !report.error;
 console.log(ok ? "VERIFY: PASS" : "VERIFY: FAIL");
 

@@ -3,26 +3,16 @@ import * as echarts from "../../echarts";
 import type { LovelaceCard } from "custom-card-helpers";
 import { GRID, ICONS, type ThemeColors } from "../../const";
 import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
-import type { ChartKey, ForecastEvent, Hass } from "../../ha-dom";
-import { tempOption } from "../../charts/temp";
-import { precipOption } from "../../charts/precip";
-import { windOption } from "../../charts/wind";
+import type { ForecastEvent, Hass } from "../../ha-dom";
+import { meteogramOption } from "../../charts/meteogram";
 import { CARD_NAME, EDITOR_NAME } from "./const";
 import type { MeteogramConfig } from "./config";
 import "./editor";
 
-const CHART_WEIGHTS: Record<ChartKey, number> = {
-  temp: 3,
-  precip: 3,
-  wind: 2.4,
-};
-
 interface Els {
   wrap: HTMLElement;
   icons: HTMLElement;
-  temp: HTMLElement;
-  precip: HTMLElement;
-  wind: HTMLElement;
+  chart: HTMLElement;
   dots: HTMLElement;
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
@@ -39,7 +29,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _sub = false;
   private _unsub?: () => void;
   private _ready?: Promise<void>;
-  private _charts?: Record<ChartKey, ECharts>;
+  private _chart?: ECharts;
   private _ro?: ResizeObserver;
   private _el?: Els;
 
@@ -82,8 +72,8 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     this._unsub?.();
     this._unsub = undefined;
     this._ro?.disconnect();
-    if (this._charts) Object.values(this._charts).forEach((c) => c.dispose());
-    this._charts = undefined;
+    this._chart?.dispose();
+    this._chart = undefined;
     this._ready = undefined;
     this._sub = false;
   }
@@ -131,38 +121,24 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       const el = this._el!;
       // SVG renderer: the canvas renderer left blank (correctly-sized) charts in
       // the sections-grid shadow DOM; SVG sidesteps the canvas paint quirk.
-      const opt = { renderer: "svg" as const };
-      this._charts = {
-        temp: echarts.init(el.temp, null, opt),
-        precip: echarts.init(el.precip, null, opt),
-        wind: echarts.init(el.wind, null, opt),
-      };
-      // Shared group → connect() syncs crosshair + tooltip across the charts.
-      const group = "wm-" + Math.random().toString(36).slice(2);
-      Object.values(this._charts).forEach((c) => (c.group = group));
-      echarts.connect(group);
+      this._chart = echarts.init(el.chart, null, { renderer: "svg" });
       // Flex won't reliably hand ECharts a non-zero height here, so drive sizing
-      // ourselves: measure .wrap and split it into explicit pixel heights.
-      this._ro = new ResizeObserver(() => this._sizeCharts());
+      // ourselves: measure the chart box and resize to explicit pixels.
+      this._ro = new ResizeObserver(() => this._sizeChart());
       this._ro.observe(el.wrap);
     })();
     return this._ready;
   }
 
-  // Split .wrap's height (minus the icon row) across the three charts by weight,
-  // set each div's pixel height, and resize ECharts to those exact numbers.
-  private _sizeCharts(): void {
-    if (!this._charts || !this._el) return;
+  // Size the single chart to fill the space below the icon row.
+  private _sizeChart(): void {
+    if (!this._chart || !this._el) return;
     const el = this._el;
-    const w = el.temp.clientWidth || el.wrap.clientWidth;
-    const avail = el.wrap.clientHeight - el.icons.offsetHeight;
-    if (w <= 0 || avail <= 0) return;
-    const total = CHART_WEIGHTS.temp + CHART_WEIGHTS.precip + CHART_WEIGHTS.wind;
-    (Object.keys(this._charts) as ChartKey[]).forEach((k) => {
-      const h = Math.floor((avail * CHART_WEIGHTS[k]) / total);
-      el[k].style.height = h + "px";
-      this._charts![k].resize({ width: w, height: h });
-    });
+    const w = el.chart.clientWidth || el.wrap.clientWidth;
+    const h = el.wrap.clientHeight - el.icons.offsetHeight;
+    if (w <= 0 || h <= 0) return;
+    el.chart.style.height = h + "px";
+    this._chart.resize({ width: w, height: h });
   }
 
   private _build(): void {
@@ -177,9 +153,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         </div>
         <div class="wrap">
           <div class="icons"></div>
-          <div class="chart temp"></div>
-          <div class="chart precip"></div>
-          <div class="chart wind"></div>
+          <div class="chart"></div>
         </div>
         <div class="dots"></div>
       </ha-card>
@@ -200,9 +174,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     this._el = {
       wrap: q(".wrap"),
       icons: q(".icons"),
-      temp: q(".chart.temp"),
-      precip: q(".chart.precip"),
-      wind: q(".chart.wind"),
+      chart: q(".chart"),
       dots: q(".dots"),
       prev: q(".prev"),
       next: q(".next"),
@@ -247,10 +219,10 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   }
 
   private _render(): void {
-    if (!this._el || !this._charts) return;
+    if (!this._el || !this._chart) return;
     const pages = paginate(this._forecast, Date.now());
-    // No forecast yet: keep the built (empty) charts and wait for data rather than
-    // replacing the DOM with an error, which would detach the chart containers.
+    // No forecast yet: keep the built (empty) chart and wait for data rather than
+    // replacing the DOM with an error, which would detach the chart container.
     if (!pages.length) return;
     this._pages = pages;
     this._page = Math.min(this._page, pages.length - 1);
@@ -265,20 +237,18 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       )
       .join("");
 
-    // Size the containers BEFORE setOption so ECharts lays the series out into a
+    // Size the container BEFORE setOption so ECharts lays the series out into a
     // non-zero box; otherwise the grid computes at height 0 and nothing paints.
-    this._sizeCharts();
+    this._sizeChart();
     try {
-      this._charts.temp.setOption(tempOption(data, hours, th), true);
-      this._charts.precip.setOption(precipOption(data, hours, th), true);
-      this._charts.wind.setOption(windOption(data, hours, th), true);
+      this._chart.setOption(meteogramOption(data, hours, th), true);
     } catch (err) {
       console.error("[weather-meteogram] setOption failed:", err);
       this._error("setOption feilet: " + String((err as Error).message ?? err));
       return;
     }
     // If the first paint happened before layout settled, size once more next frame.
-    requestAnimationFrame(() => this._sizeCharts());
+    requestAnimationFrame(() => this._sizeChart());
 
     this._el.dots.innerHTML = pages
       .map((_, i) => `<span class="dot ${i === this._page ? "on" : ""}" data-p="${i}"></span>`)

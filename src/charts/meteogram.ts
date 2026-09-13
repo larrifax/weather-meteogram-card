@@ -1,0 +1,198 @@
+import type { EChartsOption } from "echarts";
+import { COL, GRID, type ThemeColors } from "../const";
+import { num, type TimedForecast } from "../forecast";
+
+// Three stacked grids in ONE chart instance. axisPointer.link keeps the crosshair
+// synced across all three, and a single instance means a single tooltip — which
+// is why this is one option rather than three connected charts.
+const GRIDS = [
+  { top: "4%", height: "32%" }, // temp
+  { top: "41%", height: "27%" }, // precip
+  { top: "73%", height: "16%" }, // wind
+].map((g) => ({ left: GRID.left, right: GRID.right, ...g }));
+
+function xAxis(hours: string[], gridIndex: number, showLabels: boolean, th: ThemeColors) {
+  return {
+    type: "category" as const,
+    gridIndex,
+    data: hours,
+    boundaryGap: true,
+    axisLine: { show: false },
+    axisTick: { show: showLabels, alignWithLabel: true },
+    axisLabel: { show: showLabels, fontSize: 10, color: th.sec },
+  };
+}
+
+const faintSplit = { lineStyle: { opacity: 0.15 } };
+
+/** Combined tooltip: one box with temp, precipitation and wind for the hovered hour. */
+function tooltipFormatter(data: TimedForecast[]) {
+  return (params: any): string => {
+    const i = Array.isArray(params) ? params[0]?.dataIndex : params?.dataIndex;
+    const f = i != null ? data[i] : undefined;
+    if (!f) return "";
+    const hh = String(new Date(f.t).getHours()).padStart(2, "0");
+    const mm = num(f.precipitation);
+    const prob = num(f.precipitation_probability);
+    const spd = Math.round(num(f.wind_speed));
+    const gust = Math.round(num(f.wind_gust_speed ?? f.wind_speed));
+    return (
+      `${hh}:00` +
+      `<br>Temp <b>${Math.round(num(f.temperature))}°</b>` +
+      `<br>Nedbør <b>${mm.toFixed(1)} mm</b> (${prob}%)` +
+      `<br>Vind <b>${spd} m/s</b> (kast ${gust})`
+    );
+  };
+}
+
+export function meteogramOption(
+  data: TimedForecast[],
+  hours: string[],
+  th: ThemeColors,
+): EChartsOption {
+  const temps = data.map((f) => num(f.temperature));
+  const mm = data.map((f) => num(f.precipitation));
+  const prob = data.map((f) => num(f.precipitation_probability));
+  const speed = data.map((f) => num(f.wind_speed));
+  // Stack trick: base = speed line, delta = gust-speed stacked with areaStyle, so
+  // the shaded area fills the speed→gust range.
+  const delta = data.map((f) =>
+    Math.max(0, num(f.wind_gust_speed ?? f.wind_speed) - num(f.wind_speed)),
+  );
+  const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: num(f.wind_bearing) + 180 }));
+
+  return {
+    animation: false,
+    grid: GRIDS,
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
+      formatter: tooltipFormatter(data),
+    },
+    xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, false, th), xAxis(hours, 2, true, th)],
+    yAxis: [
+      // 0 — temperature
+      {
+        gridIndex: 0,
+        type: "value",
+        scale: true,
+        axisLabel: { formatter: "{value}°", fontSize: 10, color: th.sec },
+        splitLine: faintSplit,
+      },
+      // 1 — precipitation (mm)
+      {
+        gridIndex: 1,
+        type: "value",
+        min: 0,
+        name: "mm",
+        nameTextStyle: { fontSize: 9, color: th.sec },
+        axisLabel: { fontSize: 10, color: th.sec },
+        splitLine: faintSplit,
+      },
+      // 2 — precipitation probability (hidden 0–100 scale behind the mm bars)
+      { gridIndex: 1, type: "value", min: 0, max: 100, show: false },
+      // 3 — wind
+      {
+        gridIndex: 2,
+        type: "value",
+        min: 0,
+        axisLabel: { fontSize: 10, color: th.sec },
+        splitLine: faintSplit,
+      },
+    ],
+    series: [
+      {
+        name: "Temp",
+        type: "line",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: temps,
+        smooth: true,
+        symbol: "circle",
+        symbolSize: 4,
+        lineStyle: { color: COL.temp, width: 2 },
+        itemStyle: { color: COL.temp },
+        label: {
+          show: true,
+          formatter: (o: any) => `${Math.round(o.value)}°`,
+          fontSize: 10,
+          color: th.pri,
+          position: "top",
+        },
+      },
+      // Faint probability bar behind the solid mm bar (barGap -100% overlays them).
+      {
+        name: "Sannsynlighet",
+        type: "bar",
+        xAxisIndex: 1,
+        yAxisIndex: 2,
+        data: prob,
+        barWidth: "72%",
+        itemStyle: { color: COL.precip, opacity: 0.18 },
+        z: 1,
+      },
+      {
+        name: "Nedbør",
+        type: "bar",
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        data: mm,
+        barWidth: "44%",
+        barGap: "-100%",
+        itemStyle: { color: COL.precip },
+        z: 2,
+        label: {
+          show: true,
+          position: "top",
+          fontSize: 9,
+          color: COL.precip,
+          formatter: (o: any) => (o.value > 0 ? o.value.toFixed(1) : ""),
+        },
+      },
+      {
+        name: "Vind",
+        type: "line",
+        xAxisIndex: 2,
+        yAxisIndex: 3,
+        data: speed,
+        stack: "w",
+        symbol: "none",
+        lineStyle: { color: COL.wind, width: 1.5 },
+        areaStyle: { opacity: 0 },
+        z: 3,
+        label: {
+          show: true,
+          position: "top",
+          fontSize: 9,
+          color: COL.wind,
+          formatter: (o: any) => `${Math.round(o.value)}`,
+        },
+      },
+      {
+        name: "Kast",
+        type: "line",
+        xAxisIndex: 2,
+        yAxisIndex: 3,
+        data: delta,
+        stack: "w",
+        symbol: "none",
+        lineStyle: { opacity: 0 },
+        areaStyle: { color: COL.wind, opacity: 0.3 },
+        z: 2,
+      },
+      {
+        name: "Retning",
+        type: "scatter",
+        xAxisIndex: 2,
+        yAxisIndex: 3,
+        data: arrows,
+        symbol: "path://M0,-5 L-3,4 L0,2 L3,4 Z",
+        symbolSize: 11,
+        symbolOffset: [0, -9],
+        itemStyle: { color: th.sec },
+        silent: true,
+        z: 4,
+      },
+    ],
+  };
+}
