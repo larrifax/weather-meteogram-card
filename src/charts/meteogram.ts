@@ -108,10 +108,10 @@ export function meteogramOption(
     Math.max(0, num(f.wind_gust_speed ?? f.wind_speed) - num(f.wind_speed)),
   );
   // wind_bearing is a compass angle (clockwise from north = direction wind comes
-  // FROM). symbolRotate is counter-clockwise-positive, so a compass angle must be
-  // negated to become a screen rotation, else E/W mirror. +180 flips the arrow to
-  // point where the wind is going, not where it's from. -(b+180) === 180-b.
-  const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: 180 - num(f.wind_bearing) }));
+  // FROM). Arrows point toward the source, so straight at the bearing. symbolRotate
+  // is counter-clockwise-positive, so the clockwise compass angle is negated to
+  // become a screen rotation, else E/W mirror.
+  const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: -num(f.wind_bearing) }));
   const times = data.map((f) => f.t);
   // Condition icons are NOT an ECharts symbol series: image:// symbols rasterize
   // to a static <image>, killing the SVGs' built-in SMIL animation. The card
