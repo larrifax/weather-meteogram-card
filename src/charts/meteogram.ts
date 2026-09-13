@@ -47,6 +47,10 @@ function xAxis(
     axisTick: { show: showLabels, alignWithLabel: true, interval: 0 },
     axisLabel: {
       show: showLabels,
+      // Force every-other-tick labels to match the formatter. Default "auto"
+      // auto-drops labels it deems overlapping; the wider two-line date label on
+      // day one skews that calc so only 00/06/12/18 survive on the first day.
+      interval: (i: number) => i % 2 === 0,
       fontSize: 10,
       color: th.sec,
       ...(dateLabel
