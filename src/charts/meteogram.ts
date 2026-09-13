@@ -107,7 +107,11 @@ export function meteogramOption(
   const delta = data.map((f) =>
     Math.max(0, num(f.wind_gust_speed ?? f.wind_speed) - num(f.wind_speed)),
   );
-  const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: num(f.wind_bearing) + 180 }));
+  // wind_bearing is a compass angle (clockwise from north = direction wind comes
+  // FROM). Arrows point toward the source, so straight at the bearing. symbolRotate
+  // is counter-clockwise-positive, so the clockwise compass angle is negated to
+  // become a screen rotation, else E/W mirror.
+  const arrows = data.map((f, i) => ({ value: [i, 0], symbolRotate: -num(f.wind_bearing) }));
   const times = data.map((f) => f.t);
   // Condition icons are NOT an ECharts symbol series: image:// symbols rasterize
   // to a static <image>, killing the SVGs' built-in SMIL animation. The card
