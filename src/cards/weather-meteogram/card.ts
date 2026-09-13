@@ -211,6 +211,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         ha-card { padding: 8px 4px 4px; height:100%; min-height:320px; box-sizing:border-box; display:flex; flex-direction:column; }
         .hdr { display:flex; align-items:center; justify-content:space-between; padding:0 12px; }
         .ttl { font-size:1.1em; font-weight:500; }
+        .nav ha-icon-button { --mdc-icon-button-size:32px; --mdc-icon-size:20px; }
         .nav ha-icon-button[disabled] { opacity:.3; pointer-events:none; }
         .wrap { flex:1; min-height:0; display:flex; flex-direction:column; position:relative; touch-action: pan-y; }
         .chart { width:100%; flex:1; min-height:0; }
