@@ -8,16 +8,23 @@ import type { AxisBounds } from "./bounds";
 // the bottom grid. axisPointer.link keeps the crosshair synced across both, and
 // a single instance means a single tooltip.
 const GRIDS = [
-  { top: "6%", height: "56%" }, // temp + precip
+  { top: "12%", height: "50%" }, // temp + precip (top margin leaves room for the hour labels)
   { top: "72%", height: "16%" }, // wind
 ].map((g) => ({ left: GRID.left, right: GRID.right, ...g }));
 
-function xAxis(hours: string[], gridIndex: number, showLabels: boolean, th: ThemeColors) {
+function xAxis(
+  hours: string[],
+  gridIndex: number,
+  showLabels: boolean,
+  th: ThemeColors,
+  position?: "top" | "bottom",
+) {
   return {
     type: "category" as const,
     gridIndex,
     data: hours,
     boundaryGap: true,
+    ...(position ? { position } : {}),
     axisLine: { show: false },
     axisTick: { show: showLabels, alignWithLabel: true },
     axisLabel: { show: showLabels, fontSize: 10, color: th.sec },
@@ -90,7 +97,11 @@ export function meteogramOption(
     // Two differently-sized bars on one category axis get edge-aligned by barGap,
     // pushing the narrow mm bar off the band center vs the line points. A solo bar
     // per axis centers on its band, so mm bar, prob bar and line all line up.
-    xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, true, th), xAxis(hours, 0, false, th)],
+    xAxis: [
+      xAxis(hours, 0, true, th, "top"),
+      xAxis(hours, 1, true, th),
+      xAxis(hours, 0, false, th),
+    ],
     yAxis: [
       // 0 — temperature (top grid, left axis). Fixed bounds so the scale holds
       // steady across periods instead of refitting each page.
