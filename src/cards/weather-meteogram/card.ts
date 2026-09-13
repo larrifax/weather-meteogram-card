@@ -15,7 +15,6 @@ interface Els {
   wrap: HTMLElement;
   chart: HTMLElement;
   icons: HTMLElement;
-  dots: HTMLElement;
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
 }
@@ -205,7 +204,6 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
           <div class="chart"></div>
           <div class="icons"></div>
         </div>
-        <div class="dots"></div>
       </ha-card>
       <style>
         ha-card { padding: 8px 4px 4px; height:100%; min-height:320px; box-sizing:border-box; display:flex; flex-direction:column; }
@@ -217,16 +215,12 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         /* Animated condition icons overlaid on the chart; positioned in JS. */
         .icons { position:absolute; inset:0; pointer-events:none; }
         .icons img { position:absolute; width:${ICON_PX}px; height:${ICON_PX}px; transform:translate(-50%,-50%); }
-        .dots { display:flex; gap:6px; justify-content:center; padding:6px 0 4px; }
-        .dot { width:8px; height:8px; border-radius:50%; background:var(--disabled-text-color); cursor:pointer; }
-        .dot.on { background:var(--primary-color); }
       </style>`;
     const q = <T extends HTMLElement>(sel: string) => this.querySelector(sel) as T;
     this._el = {
       wrap: q(".wrap"),
       chart: q(".chart"),
       icons: q(".icons"),
-      dots: q(".dots"),
       prev: q(".prev"),
       next: q(".next"),
     };
@@ -241,13 +235,6 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     };
     this._el.prev.onclick = () => go(-1);
     this._el.next.onclick = () => go(1);
-    this._el.dots.onclick = (e: MouseEvent) => {
-      const p = (e.target as HTMLElement).dataset?.p;
-      if (p != null) {
-        this._page = +p;
-        this._render();
-      }
-    };
     let x0: number | null = null;
     this._el.wrap.addEventListener("touchstart", (e) => (x0 = e.touches[0].clientX), {
       passive: true,
@@ -306,9 +293,6 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     // If the first paint happened before layout settled, size once more next frame.
     requestAnimationFrame(() => this._sizeChart());
 
-    this._el.dots.innerHTML = pages
-      .map((_, i) => `<span class="dot ${i === this._page ? "on" : ""}" data-p="${i}"></span>`)
-      .join("");
     this._el.prev.disabled = this._page === 0;
     this._el.next.disabled = this._page === pages.length - 1;
   }
