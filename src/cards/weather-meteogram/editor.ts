@@ -3,6 +3,8 @@ import type { Hass } from "../../ha-dom";
 import { EDITOR_NAME } from "./const";
 import type { MeteogramConfig } from "./config";
 
+const numberSelector = { number: { mode: "box" as const } };
+
 const EDITOR_SCHEMA = [
   {
     name: "entity",
@@ -10,9 +12,24 @@ const EDITOR_SCHEMA = [
     selector: { entity: { domain: "weather" } },
   },
   { name: "title", selector: { text: {} } },
+  {
+    name: "",
+    type: "grid",
+    schema: [
+      { name: "temp_min", selector: numberSelector },
+      { name: "temp_max", selector: numberSelector },
+      { name: "precip_max", selector: numberSelector },
+    ],
+  },
 ];
 
-const LABELS: Record<string, string> = { entity: "Værenhet", title: "Tittel" };
+const LABELS: Record<string, string> = {
+  entity: "Værenhet",
+  title: "Tittel",
+  temp_min: "Min temp (°)",
+  temp_max: "Maks temp (°)",
+  precip_max: "Maks nedbør (mm)",
+};
 
 export class WeatherMeteogramCardEditor extends HTMLElement implements LovelaceCardEditor {
   private _hass?: Hass;

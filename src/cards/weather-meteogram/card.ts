@@ -5,6 +5,7 @@ import { GRID, ICONS, type ThemeColors } from "../../const";
 import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
 import type { ForecastEvent, Hass } from "../../ha-dom";
 import { meteogramOption } from "../../charts/meteogram";
+import { computeBounds, type BoundsOverrides } from "../../charts/bounds";
 import { CARD_NAME, EDITOR_NAME } from "./const";
 import type { MeteogramConfig } from "./config";
 import "./editor";
@@ -22,6 +23,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _hass?: Hass;
   private _entity?: string;
   private _title = "Vær";
+  private _bounds: BoundsOverrides = {};
   private _page = 0;
   private _forecast: ForecastHour[] = [];
   private _pages: TimedForecast[][] = [];
@@ -50,6 +52,11 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     if (!config.entity) throw new Error("Set 'entity' to a weather.* entity");
     this._entity = config.entity;
     this._title = config.title ?? "Vær";
+    this._bounds = {
+      tempMin: config.temp_min,
+      tempMax: config.temp_max,
+      precipMax: config.precip_max,
+    };
     this._page = 0;
     void this._update();
   }
@@ -224,6 +231,9 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     // No forecast yet: keep the built (empty) chart and wait for data rather than
     // replacing the DOM with an error, which would detach the chart container.
     if (!pages.length) return;
+    // Bounds over the whole forecast (all pages), not just the current one, so
+    // the axes hold steady as the user swipes between periods.
+    const bounds = computeBounds(pages.flat(), this._bounds);
     this._pages = pages;
     this._page = Math.min(this._page, pages.length - 1);
     const data = pages[this._page];
@@ -241,7 +251,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     // non-zero box; otherwise the grid computes at height 0 and nothing paints.
     this._sizeChart();
     try {
-      this._chart.setOption(meteogramOption(data, hours, th), true);
+      this._chart.setOption(meteogramOption(data, hours, th, bounds), true);
     } catch (err) {
       console.error("[weather-meteogram] setOption failed:", err);
       this._error("setOption feilet: " + String((err as Error).message ?? err));

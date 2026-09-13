@@ -1,6 +1,7 @@
 import type { EChartsOption } from "echarts";
 import { COL, GRID, type ThemeColors } from "../const";
 import { num, type TimedForecast } from "../forecast";
+import type { AxisBounds } from "./bounds";
 
 // Two stacked grids in ONE chart instance: temperature + precipitation share
 // the top grid (temp on the left y-axis, precip mm on the right), wind sits in
@@ -49,6 +50,7 @@ export function meteogramOption(
   data: TimedForecast[],
   hours: string[],
   th: ThemeColors,
+  bounds: AxisBounds,
 ): EChartsOption {
   const temps = data.map((f) => num(f.temperature));
   const mm = data.map((f) => num(f.precipitation));
@@ -71,11 +73,13 @@ export function meteogramOption(
     },
     xAxis: [xAxis(hours, 0, false, th), xAxis(hours, 1, true, th)],
     yAxis: [
-      // 0 — temperature (top grid, left axis)
+      // 0 — temperature (top grid, left axis). Fixed bounds so the scale holds
+      // steady across periods instead of refitting each page.
       {
         gridIndex: 0,
         type: "value",
-        scale: true,
+        min: bounds.tempMin,
+        max: bounds.tempMax,
         position: "left",
         axisLabel: { formatter: "{value}°", fontSize: 10, color: th.sec },
         splitLine: faintSplit,
@@ -85,6 +89,7 @@ export function meteogramOption(
         gridIndex: 0,
         type: "value",
         min: 0,
+        max: bounds.precipMax,
         position: "right",
         axisLabel: { formatter: "{value} mm", fontSize: 10, color: th.sec },
         splitLine: { show: false },
@@ -96,6 +101,7 @@ export function meteogramOption(
         gridIndex: 1,
         type: "value",
         min: 0,
+        max: bounds.windMax,
         axisLabel: { fontSize: 10, color: th.sec },
         splitLine: faintSplit,
       },

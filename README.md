@@ -34,12 +34,23 @@ entity: weather.your_weather_entity
 title: Vær
 ```
 
-| Option   | Type   | Default | Description                      |
-| -------- | ------ | ------- | -------------------------------- |
-| `entity` | string | —       | A `weather.*` entity (required). |
-| `title`  | string | `Vær`   | Header title.                    |
+| Option       | Type   | Default | Description                              |
+| ------------ | ------ | ------- | ---------------------------------------- |
+| `entity`     | string | —       | A `weather.*` entity (required).         |
+| `title`      | string | `Vær`   | Header title.                            |
+| `temp_min`   | number | auto    | Pin the temperature axis minimum (°).    |
+| `temp_max`   | number | auto    | Pin the temperature axis maximum (°).    |
+| `precip_max` | number | auto    | Pin the precipitation axis maximum (mm). |
 
-The card is also configurable from the visual editor (entity picker + title).
+The card is also configurable from the visual editor.
+
+### Axis scales
+
+By default the axes are derived from the **whole forecast** (not just the visible
+12 h) and snapped to round steps, so they stay steady as you page between periods
+and only shift when the data crosses a step boundary. Because the source is the
+location's own forecast, the scale already follows the local season. To anchor the
+axes to your own climate normals instead, set `temp_min` / `temp_max` / `precip_max`.
 
 ### Sizing
 
