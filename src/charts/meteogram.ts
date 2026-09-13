@@ -146,8 +146,7 @@ export function meteogramOption(
         smooth: true,
         symbol: "circle",
         symbolSize: 4,
-        lineStyle: { color: COL.temp, width: 2 },
-        itemStyle: { color: COL.temp },
+        lineStyle: { width: 2 },
         z: 3,
         label: {
           show: true,
