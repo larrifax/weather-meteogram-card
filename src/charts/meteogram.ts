@@ -267,7 +267,7 @@ export function meteogramOption(
         symbolSize: 11,
         // Anchored at the wind grid bottom axis (y=0); push down past the hour
         // labels so arrows render below them, not inside the chart band.
-        symbolOffset: [0, 22],
+        symbolOffset: [0, 14],
         itemStyle: { color: th.sec },
         silent: true,
         z: 4,
