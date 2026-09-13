@@ -1,6 +1,6 @@
 # Weather Meteogram Card
 
-A DMI-style hourly weather meteogram for Home Assistant, built with [Apache ECharts](https://echarts.apache.org/).
+An hourly weather meteogram for Home Assistant, built with [Apache ECharts](https://echarts.apache.org/).
 
 Shows, top to bottom, for a 12-hour window:
 
@@ -69,7 +69,7 @@ set a height with `card-mod`.
 ### Requirements
 
 - The entity must provide an **hourly** forecast (the card subscribes via
-  `weather.get_forecasts`, `type: hourly`). Most integrations (Met.no, DMI, …) do.
+  `weather.get_forecasts`, `type: hourly`). Most integrations (Met.no, …) do.
 - ~48 hourly points are needed to fill all four pages; fewer just means fewer pages.
 
 ## Development

@@ -1,7 +1,7 @@
 {
   "name": "weather-meteogram-card",
   "version": "0.1.0",
-  "description": "DMI-style hourly weather meteogram card for Home Assistant (Apache ECharts).",
+  "description": "Hourly weather meteogram card for Home Assistant (Apache ECharts).",
   "license": "MIT",
   "author": "Kristian Tryggestad",
   "repository": {
