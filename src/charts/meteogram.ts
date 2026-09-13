@@ -113,17 +113,21 @@ export function meteogramOption(
       axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
       formatter: tooltipFormatter(data),
     },
-    // Color the temp line by value: red above 4°C, blue at/below. Piecewise
-    // visualMap paints each line segment from its y-value; seriesIndex 0 = temp.
+    // Color the temp line by value: red when warm, blue when cold, with a smooth
+    // gradient crossing over at 4°C. Continuous visualMap interpolates the color
+    // per y-value along the line (seriesIndex 0 = temp). The crossover sits at the
+    // midpoint of [min,max], so we pin a tight band centered on 4° — values outside
+    // clamp to the endpoint color, values inside blend. color[0] maps to max.
     visualMap: {
       show: false,
-      type: "piecewise",
+      type: "continuous",
       seriesIndex: 0,
       dimension: 1,
-      pieces: [
-        { gt: 4, color: COL.tempWarm },
-        { lte: 4, color: COL.tempCold },
-      ],
+      min: 1,
+      max: 7,
+      // inRange.color maps max→min, so [warm, cold] = red at the top, blue at the
+      // bottom, blending through the 1–7° band.
+      inRange: { color: [COL.tempCold, COL.tempWarm] },
     },
     // Index 2: hidden twin of axis 0 (same top grid) for the probability bar.
     // Two differently-sized bars on one category axis get edge-aligned by barGap,
