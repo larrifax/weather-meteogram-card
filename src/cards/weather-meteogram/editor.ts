@@ -1,11 +1,13 @@
 import type { LovelaceCardEditor } from "custom-card-helpers";
 import type { Hass } from "../../ha-dom";
+import { t, type TranslationKey } from "../../i18n";
 import { EDITOR_NAME } from "./const";
 import type { MeteogramConfig } from "./config";
 
 const numberSelector = { number: { mode: "box" as const } };
 
-const EDITOR_SCHEMA = [
+// Schema + labels are built per-render from hass.language so the form localizes.
+const schema = (lang?: string) => [
   {
     name: "entity",
     required: true,
@@ -19,8 +21,8 @@ const EDITOR_SCHEMA = [
       select: {
         mode: "dropdown" as const,
         options: [
-          { value: "source", label: "Peker mot kilde (fra)" },
-          { value: "target", label: "Peker mot mål (til)" },
+          { value: "source", label: t(lang, "editor_wind_direction_source") },
+          { value: "target", label: t(lang, "editor_wind_direction_target") },
         ],
       },
     },
@@ -36,14 +38,15 @@ const EDITOR_SCHEMA = [
   },
 ];
 
-const LABELS: Record<string, string> = {
-  entity: "Værenhet",
-  title: "Tittel",
-  use_climate_normals: "Bruk klimanormaler",
-  wind_direction: "Vindpilretning",
-  temp_min: "Min temp (°)",
-  temp_max: "Maks temp (°)",
-  precip_max: "Maks nedbør (mm)",
+// Field name -> translation key for ha-form's computeLabel.
+const LABEL_KEYS: Record<string, TranslationKey> = {
+  entity: "editor_entity",
+  title: "editor_title",
+  use_climate_normals: "editor_use_climate_normals",
+  wind_direction: "editor_wind_direction",
+  temp_min: "editor_temp_min",
+  temp_max: "editor_temp_max",
+  precip_max: "editor_precip_max",
 };
 
 export class WeatherMeteogramCardEditor extends HTMLElement implements LovelaceCardEditor {
@@ -63,9 +66,13 @@ export class WeatherMeteogramCardEditor extends HTMLElement implements LovelaceC
 
   private _render(): void {
     if (!this._hass || !this._config) return;
+    const lang = this._hass.language;
     if (!this._form) {
       this._form = document.createElement("ha-form");
-      this._form.computeLabel = (s: { name: string }) => LABELS[s.name] ?? s.name;
+      this._form.computeLabel = (s: { name: string }) => {
+        const key = LABEL_KEYS[s.name];
+        return key ? t(this._hass?.language, key) : s.name;
+      };
       this._form.addEventListener("value-changed", (e: CustomEvent) => {
         this.dispatchEvent(
           new CustomEvent("config-changed", {
@@ -76,7 +83,7 @@ export class WeatherMeteogramCardEditor extends HTMLElement implements LovelaceC
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
-    this._form.schema = EDITOR_SCHEMA;
+    this._form.schema = schema(lang);
     this._form.data = { ...this._config };
   }
 }

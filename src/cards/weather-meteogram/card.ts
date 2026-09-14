@@ -9,6 +9,7 @@ import { computeBounds, type BoundsOverrides, type ClimateNormal } from "../../c
 import { fetchClimateNormal } from "../../charts/climate";
 import { CARD_NAME, EDITOR_NAME } from "./const";
 import type { MeteogramConfig } from "./config";
+import { t } from "../../i18n";
 import "./editor";
 
 interface Els {
@@ -26,7 +27,8 @@ const ICON_PX = 36;
 export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _hass?: Hass;
   private _entity?: string;
-  private _title = "Vær";
+  // Explicit title from config; when unset the default localizes to hass.language.
+  private _titleOverride?: string;
   private _bounds: BoundsOverrides = {};
   private _useClimate = true;
   private _windDir: "source" | "target" = "source";
@@ -53,14 +55,13 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     return {
       type: `custom:${CARD_NAME}`,
       entity: weather ?? "weather.home",
-      title: "Vær",
     };
   }
 
   public setConfig(config: MeteogramConfig): void {
-    if (!config.entity) throw new Error("Set 'entity' to a weather.* entity");
+    if (!config.entity) throw new Error(t(this._hass?.language, "card_err_entity"));
     this._entity = config.entity;
-    this._title = config.title ?? "Vær";
+    this._titleOverride = config.title;
     this._bounds = {
       tempMin: config.temp_min,
       tempMax: config.temp_max,
@@ -126,7 +127,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     try {
       await this._ensure();
     } catch (e) {
-      this._error("Kunne ikke laste ECharts: " + String((e as Error).message ?? e));
+      this._error(t(this._hass?.language, "card_err_echarts") + String((e as Error).message ?? e));
       return;
     }
     this._render();
@@ -227,7 +228,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       prev: q(".prev"),
       next: q(".next"),
     };
-    q(".ttl").textContent = this._title;
+    q(".ttl").textContent = this._titleOverride ?? t(this._hass?.language, "card_default_title");
 
     const go = (d: number) => {
       const n = this._page + d;
@@ -278,10 +279,15 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     // non-zero box; otherwise the grid computes at height 0 and nothing paints.
     this._sizeChart();
     try {
-      this._chart.setOption(meteogramOption(data, hours, th, bounds, this._windDir), true);
+      this._chart.setOption(
+        meteogramOption(data, hours, th, bounds, this._windDir, this._hass?.language),
+        true,
+      );
     } catch (err) {
       console.error("[weather-meteogram] setOption failed:", err);
-      this._error("setOption feilet: " + String((err as Error).message ?? err));
+      this._error(
+        t(this._hass?.language, "card_err_setoption") + String((err as Error).message ?? err),
+      );
       return;
     }
     // Animated <img> icons overlaid on the top grid, one per hour. Kept as real
