@@ -120,3 +120,54 @@ test("a single shared tooltip renders on hover", async () => {
   );
   expect(tips.length).toBe(1);
 });
+
+test("the axisPointer crosshair strip is synced across both grids on hover", async () => {
+  // Regression guard for axisPointer.link: hovering the top (temp/precip) grid
+  // must draw the vertical marker strip in BOTH the top grid AND the bottom
+  // (wind) grid at the same x. The `link` option only takes effect at the
+  // top level of the option — if it slips back under `tooltip.axisPointer`
+  // ECharts silently ignores it and only the hovered grid gets a strip.
+  const card = await mount();
+  const chart = card.querySelector(".chart") as HTMLElement;
+  const svg = chart.querySelector("svg")!;
+  const box = chart.getBoundingClientRect();
+
+  // Hover a point inside the TOP grid (upper third of the chart).
+  const move = new MouseEvent("mousemove", {
+    bubbles: true,
+    clientX: box.x + box.width * 0.4,
+    clientY: box.y + box.height * 0.3,
+  });
+  svg.dispatchEvent(move);
+  await new Promise((r) => setTimeout(r, 300));
+
+  // ECharts renders each crosshair as a vertical <path> "Mx yTopLx yBottom".
+  // Collect the vertical ones and group them by x (rounded); the tall grid
+  // splitLines span the full width (x1 !== x2) so they don't match.
+  const verticals = [...svg.querySelectorAll("path")]
+    .map((p) => p.getAttribute("d") || "")
+    .map((d) => /^M([\d.]+) ([\d.]+)L([\d.]+) ([\d.]+)$/.exec(d))
+    .filter((m): m is RegExpExecArray => !!m && m[1] === m[3]) // x1 === x2 → vertical
+    .map((m) => ({ x: Math.round(+m[1]), y1: +m[2], y2: +m[4] }))
+    // Drop the short axis-tick blips (~5px); keep the tall crosshair strips.
+    .filter((v) => Math.abs(v.y1 - v.y2) > 20);
+
+  // Group the strips by hovered x. Only one x should be hovered, and ECharts may
+  // emit a given grid's strip more than once, so normalize each segment to a
+  // [top, bottom] band and dedupe.
+  const byX = new Map<number, { top: number; bottom: number }[]>();
+  for (const v of verticals) {
+    const band = { top: Math.min(v.y1, v.y2), bottom: Math.max(v.y1, v.y2) };
+    const list = byX.get(v.x) ?? byX.set(v.x, []).get(v.x)!;
+    if (!list.some((s) => Math.abs(s.top - band.top) < 2 && Math.abs(s.bottom - band.bottom) < 2))
+      list.push(band);
+  }
+  const strips = [...byX.entries()].filter(([, bands]) => bands.length >= 2);
+  expect(strips.length).toBe(1);
+
+  // The two bands must be vertically disjoint — the wind-grid strip sits strictly
+  // below the temp-grid strip, with the inter-grid margin as a gap between them.
+  // A single-grid crosshair (the pre-fix behavior) would yield only one band.
+  const [top, bottom] = strips[0][1].sort((p, q) => p.top - q.top);
+  expect(bottom.top).toBeGreaterThan(top.bottom);
+});
