@@ -29,6 +29,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _title = "Vær";
   private _bounds: BoundsOverrides = {};
   private _useClimate = true;
+  private _windDir: "source" | "target" = "source";
   private _climate?: ClimateNormal;
   private _climateKey?: string;
   private _page = 0;
@@ -66,6 +67,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       precipMax: config.precip_max,
     };
     this._useClimate = config.use_climate_normals ?? true;
+    this._windDir = config.wind_direction ?? "source";
     this._page = 0;
     void this._update();
   }
@@ -276,7 +278,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     // non-zero box; otherwise the grid computes at height 0 and nothing paints.
     this._sizeChart();
     try {
-      this._chart.setOption(meteogramOption(data, hours, th, bounds), true);
+      this._chart.setOption(meteogramOption(data, hours, th, bounds, this._windDir), true);
     } catch (err) {
       console.error("[weather-meteogram] setOption failed:", err);
       this._error("setOption feilet: " + String((err as Error).message ?? err));

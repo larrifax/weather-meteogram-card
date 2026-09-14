@@ -9,4 +9,7 @@ export interface MeteogramConfig extends LovelaceCardConfig {
   precip_max?: number;
   // Widen axes with seasonal normals fetched for the home location (default on).
   use_climate_normals?: boolean;
+  // Which way wind arrows point: "source" (toward where wind comes FROM, default)
+  // or "target" (toward where wind is blowing TO).
+  wind_direction?: "source" | "target";
 }

@@ -14,6 +14,18 @@ const EDITOR_SCHEMA = [
   { name: "title", selector: { text: {} } },
   { name: "use_climate_normals", selector: { boolean: {} } },
   {
+    name: "wind_direction",
+    selector: {
+      select: {
+        mode: "dropdown" as const,
+        options: [
+          { value: "source", label: "Peker mot kilde (fra)" },
+          { value: "target", label: "Peker mot mål (til)" },
+        ],
+      },
+    },
+  },
+  {
     name: "",
     type: "grid",
     schema: [
@@ -28,6 +40,7 @@ const LABELS: Record<string, string> = {
   entity: "Værenhet",
   title: "Tittel",
   use_climate_normals: "Bruk klimanormaler",
+  wind_direction: "Vindpilretning",
   temp_min: "Min temp (°)",
   temp_max: "Maks temp (°)",
   precip_max: "Maks nedbør (mm)",
