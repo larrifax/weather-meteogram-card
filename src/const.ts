@@ -16,4 +16,5 @@ export const GRID = { left: 40, right: 48 };
 export interface ThemeColors {
   sec: string;
   pri: string;
+  bg: string;
 }
