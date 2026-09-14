@@ -1,6 +1,7 @@
 import type { EChartsOption } from "echarts";
 import { COL, GRID, type ThemeColors } from "../const";
 import { num, type TimedForecast } from "../forecast";
+import { t } from "../i18n";
 import type { AxisBounds } from "./bounds";
 
 // Two stacked grids in ONE chart instance: temperature + precipitation share
@@ -12,7 +13,8 @@ const GRIDS = [
   { top: "72%", height: "16%" }, // wind
 ].map((g) => ({ left: GRID.left, right: GRID.right, ...g }));
 
-const DATE_FMT = new Intl.DateTimeFormat("nb-NO", { weekday: "short", day: "numeric" });
+const dateFmt = (lang?: string) =>
+  new Intl.DateTimeFormat(lang || "en", { weekday: "short", day: "numeric" });
 
 function xAxis(
   hours: string[],
@@ -22,7 +24,9 @@ function xAxis(
   position?: "top" | "bottom",
   // When given (top axis), stamp the date above the hour at each day boundary.
   times?: number[],
+  lang?: string,
 ) {
+  const DATE_FMT = dateFmt(lang);
   const dateLabel =
     times &&
     ((_v: string, i: number): string => {
@@ -73,7 +77,7 @@ function xAxis(
 const faintSplit = { lineStyle: { opacity: 0.15 } };
 
 /** Combined tooltip: one box with temp, precipitation and wind for the hovered hour. */
-function tooltipFormatter(data: TimedForecast[]) {
+function tooltipFormatter(data: TimedForecast[], lang?: string) {
   return (params: any): string => {
     const i = Array.isArray(params) ? params[0]?.dataIndex : params?.dataIndex;
     const f = i != null ? data[i] : undefined;
@@ -85,9 +89,9 @@ function tooltipFormatter(data: TimedForecast[]) {
     const gust = Math.round(num(f.wind_gust_speed ?? f.wind_speed));
     return (
       `${hh}:00` +
-      `<br>Temp <b>${Math.round(num(f.temperature))}°</b>` +
-      `<br>Nedbør <b>${mm.toFixed(1)} mm</b> (${prob}%)` +
-      `<br>Vind <b>${spd} m/s</b> (kast ${gust})`
+      `<br>${t(lang, "tooltip_temp")} <b>${Math.round(num(f.temperature))}°</b>` +
+      `<br>${t(lang, "tooltip_precip")} <b>${mm.toFixed(1)} mm</b> (${prob}%)` +
+      `<br>${t(lang, "tooltip_wind")} <b>${spd} m/s</b> (${t(lang, "tooltip_gust")} ${gust})`
     );
   };
 }
@@ -98,6 +102,7 @@ export function meteogramOption(
   th: ThemeColors,
   bounds: AxisBounds,
   windDir: "source" | "target" = "source",
+  lang?: string,
 ): EChartsOption {
   const temps = data.map((f) => num(f.temperature));
   const mm = data.map((f) => num(f.precipitation));
@@ -129,7 +134,7 @@ export function meteogramOption(
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
-      formatter: tooltipFormatter(data),
+      formatter: tooltipFormatter(data, lang),
     },
     // Color the temp line by value: red when warm, blue when cold, with a smooth
     // gradient crossing over at 4°C. Continuous visualMap interpolates the color
@@ -152,7 +157,7 @@ export function meteogramOption(
     // pushing the narrow mm bar off the band center vs the line points. A solo bar
     // per axis centers on its band, so mm bar, prob bar and line all line up.
     xAxis: [
-      xAxis(hours, 0, true, th, "top", times),
+      xAxis(hours, 0, true, th, "top", times, lang),
       xAxis(hours, 1, false, th),
       xAxis(hours, 0, false, th),
     ],
@@ -192,7 +197,7 @@ export function meteogramOption(
     ],
     series: [
       {
-        name: "Temp",
+        name: t(lang, "chart_temp"),
         type: "line",
         xAxisIndex: 0,
         yAxisIndex: 0,
@@ -214,7 +219,7 @@ export function meteogramOption(
       // sole bar on that axis and centers on the band; the mm bar does the same on
       // axis 0, so the two overlay dead-center under the line points.
       {
-        name: "Sannsynlighet",
+        name: t(lang, "chart_probability"),
         type: "bar",
         xAxisIndex: 2,
         yAxisIndex: 2,
@@ -224,7 +229,7 @@ export function meteogramOption(
         z: 1,
       },
       {
-        name: "Nedbør",
+        name: t(lang, "chart_precip"),
         type: "bar",
         xAxisIndex: 0,
         yAxisIndex: 1,
@@ -241,7 +246,7 @@ export function meteogramOption(
         },
       },
       {
-        name: "Vind",
+        name: t(lang, "chart_wind"),
         type: "line",
         xAxisIndex: 1,
         yAxisIndex: 3,
@@ -260,7 +265,7 @@ export function meteogramOption(
         },
       },
       {
-        name: "Kast",
+        name: t(lang, "chart_gust"),
         type: "line",
         xAxisIndex: 1,
         yAxisIndex: 3,
@@ -272,7 +277,7 @@ export function meteogramOption(
         z: 2,
       },
       {
-        name: "Retning",
+        name: t(lang, "chart_direction"),
         type: "scatter",
         xAxisIndex: 1,
         yAxisIndex: 3,

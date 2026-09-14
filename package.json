@@ -13,7 +13,7 @@
     "build": "vite build",
     "watch": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "test": "node test/bounds.test.mjs && vite build && node test/verify.mjs",
+    "test": "node test/bounds.test.mjs && node test/i18n.test.mjs && vite build && node test/verify.mjs",
     "lint": "oxlint",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
