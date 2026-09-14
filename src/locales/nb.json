@@ -18,8 +18,8 @@
   "chart_wind": "Vind",
   "chart_gust": "Kast",
   "chart_direction": "Retning",
-  "tooltip_temp": "Temp",
+  "tooltip_temp": "Temperatur",
   "tooltip_precip": "Nedbør",
   "tooltip_wind": "Vind",
-  "tooltip_gust": "kast"
+  "tooltip_gust": "Vindkast"
 }

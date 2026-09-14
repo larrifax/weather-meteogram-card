@@ -15,6 +15,9 @@ const GRIDS = [
 
 const dateFmt = (lang?: string) =>
   new Intl.DateTimeFormat(lang || "en", { weekday: "short", day: "numeric" });
+// Tooltip heading: weekday + day + month, e.g. "Sat, 14 Sep".
+const tipDateFmt = (lang?: string) =>
+  new Intl.DateTimeFormat(lang || "en", { weekday: "short", day: "numeric", month: "short" });
 
 function xAxis(
   hours: string[],
@@ -78,20 +81,34 @@ const faintSplit = { lineStyle: { opacity: 0.15 } };
 
 /** Combined tooltip: one box with temp, precipitation and wind for the hovered hour. */
 function tooltipFormatter(data: TimedForecast[], lang?: string) {
+  const heading = tipDateFmt(lang);
+  // Value colored to match its graph: temp warm/cold by band (crossover 4°,
+  // matching the visualMap 1–7° center), precipitation the precip blue, wind
+  // the wind color. Grid: label left, value right-aligned.
+  const row = (label: string, value: string, color: string) =>
+    `<span style="opacity:.7">${label}</span>` +
+    `<span style="text-align:right;font-weight:600;color:${color}">${value}</span>`;
   return (params: any): string => {
     const i = Array.isArray(params) ? params[0]?.dataIndex : params?.dataIndex;
     const f = i != null ? data[i] : undefined;
     if (!f) return "";
-    const hh = String(new Date(f.t).getHours()).padStart(2, "0");
+    const d = new Date(f.t);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const temp = Math.round(num(f.temperature));
+    const tempCol = num(f.temperature) >= 4 ? COL.tempWarm : COL.tempCold;
     const mm = num(f.precipitation);
     const prob = num(f.precipitation_probability);
     const spd = Math.round(num(f.wind_speed));
     const gust = Math.round(num(f.wind_gust_speed ?? f.wind_speed));
     return (
-      `${hh}:00` +
-      `<br>${t(lang, "tooltip_temp")} <b>${Math.round(num(f.temperature))}°</b>` +
-      `<br>${t(lang, "tooltip_precip")} <b>${mm.toFixed(1)} mm</b> (${prob}%)` +
-      `<br>${t(lang, "tooltip_wind")} <b>${spd} m/s</b> (${t(lang, "tooltip_gust")} ${gust})`
+      `<div style="font-weight:700;font-size:14px;margin-bottom:4px">` +
+      `${heading.format(d)} ${hh}:00</div>` +
+      `<div style="display:grid;grid-template-columns:auto auto;column-gap:12px;row-gap:2px">` +
+      row(t(lang, "tooltip_temp"), `${temp}°`, tempCol) +
+      row(t(lang, "tooltip_precip"), `${mm.toFixed(1)} mm (${prob}%)`, COL.precip) +
+      row(t(lang, "tooltip_wind"), `${spd} m/s`, COL.wind) +
+      row(t(lang, "tooltip_gust"), `${gust} m/s`, COL.wind) +
+      `</div>`
     );
   };
 }

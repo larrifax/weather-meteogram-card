@@ -18,8 +18,8 @@
   "chart_wind": "Wind",
   "chart_gust": "Gust",
   "chart_direction": "Direction",
-  "tooltip_temp": "Temp",
-  "tooltip_precip": "Precip",
+  "tooltip_temp": "Temperature",
+  "tooltip_precip": "Precipitation",
   "tooltip_wind": "Wind",
-  "tooltip_gust": "gust"
+  "tooltip_gust": "Wind gust"
 }
