@@ -4,7 +4,7 @@ import type { LovelaceCard } from "custom-card-helpers";
 import { ICONS, type ThemeColors } from "../../const";
 import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
 import type { ForecastEvent, Hass } from "../../ha-dom";
-import { meteogramOption } from "../../charts/meteogram";
+import { meteogramOption, ICON_BAND_Y } from "../../charts/meteogram";
 import { computeBounds, type BoundsOverrides, type ClimateNormal } from "../../charts/bounds";
 import { fetchClimateNormal } from "../../charts/climate";
 import { CARD_NAME, EDITOR_NAME } from "./const";
@@ -178,18 +178,19 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     this._positionIcons();
   }
 
-  // Place each overlaid icon over its hour, just under the top grid's edge.
-  // convertToPixel maps [category index, temp value] -> chart pixels; the icon
-  // sits at the top temperature bound, matching the old scatter series.
+  // Place each overlaid icon over its hour. X comes from convertToPixel (maps
+  // category index -> chart pixels); Y is a fixed fraction of chart height
+  // (ICON_BAND_Y) that drops the icons into the gap above the wind grid.
   private _positionIcons(): void {
     if (!this._chart || !this._el) return;
     const imgs = this._el.icons.children;
+    const iconY = this._chart.getHeight() * ICON_BAND_Y;
     for (let i = 0; i < imgs.length; i++) {
       const px = this._chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [i, this._iconTop]);
       if (!px) continue;
       const img = imgs[i] as HTMLElement;
       img.style.left = px[0] + "px";
-      img.style.top = px[1] + ICON_PX / 2 + "px";
+      img.style.top = iconY + "px";
     }
   }
 
