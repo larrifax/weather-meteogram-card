@@ -128,9 +128,13 @@ export function meteogramOption(
     grid: GRIDS,
     tooltip: {
       trigger: "axis",
-      axisPointer: { type: "line", link: [{ xAxisIndex: "all" }] },
+      axisPointer: { type: "line" },
       formatter: tooltipFormatter(data),
     },
+    // Top-level axisPointer: `link` only takes effect here (ignored under
+    // tooltip.axisPointer). Linking all x-axes by value makes hovering either
+    // grid draw the vertical marker strip in BOTH grids, synced to the same hour.
+    axisPointer: { link: [{ xAxisIndex: "all" }] },
     // Color the temp line by value: red when warm, blue when cold, with a smooth
     // gradient crossing over at 4°C. Continuous visualMap interpolates the color
     // per y-value along the line (seriesIndex 0 = temp). The crossover sits at the
