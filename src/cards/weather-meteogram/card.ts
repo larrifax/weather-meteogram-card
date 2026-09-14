@@ -31,7 +31,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _titleOverride?: string;
   private _bounds: BoundsOverrides = {};
   private _useClimate = true;
-  private _windDir: "source" | "target" = "source";
+  private _windDir: "source" | "target" = "target";
   private _climate?: ClimateNormal;
   private _climateKey?: string;
   private _page = 0;
@@ -68,7 +68,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       precipMax: config.precip_max,
     };
     this._useClimate = config.use_climate_normals ?? true;
-    this._windDir = config.wind_direction ?? "source";
+    this._windDir = config.wind_direction ?? "target";
     this._page = 0;
     void this._update();
   }
