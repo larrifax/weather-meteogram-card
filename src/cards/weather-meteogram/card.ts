@@ -257,6 +257,8 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     return {
       sec: c("--secondary-text-color", "#8a94a6"),
       pri: c("--primary-text-color", "#e1e1e1"),
+      // ha-card bg so the tooltip box follows the theme (was ECharts default white).
+      bg: c("--ha-card-background", c("--card-background-color", "#1c1c1c")),
     };
   }
 

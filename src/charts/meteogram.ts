@@ -151,6 +151,11 @@ export function meteogramOption(
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "line" },
+      // Follow the card theme instead of ECharts' fixed white box, so the tooltip
+      // is legible in dark mode. Heading/label text inherit via textStyle.color.
+      backgroundColor: th.bg,
+      borderColor: th.sec,
+      textStyle: { color: th.pri },
       formatter: tooltipFormatter(data, lang),
     },
     // Top-level axisPointer: `link` only takes effect here (ignored under
