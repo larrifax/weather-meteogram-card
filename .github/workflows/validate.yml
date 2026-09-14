@@ -29,5 +29,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
-      - run: node test/bounds.test.mjs
+      # Vitest browser mode drives a real Chromium via Playwright.
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test
       - run: pnpm build
