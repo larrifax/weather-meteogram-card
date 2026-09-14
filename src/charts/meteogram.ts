@@ -9,9 +9,13 @@ import type { AxisBounds } from "./bounds";
 // the bottom grid. axisPointer.link keeps the crosshair synced across both, and
 // a single instance means a single tooltip.
 const GRIDS = [
-  { top: "12%", height: "50%" }, // temp + precip (top margin leaves room for the hour labels)
-  { top: "72%", height: "16%" }, // wind
+  { top: "12%", height: "46%" }, // temp + precip (top margin leaves room for the hour labels)
+  { top: "76%", height: "12%" }, // wind (bottom ~88% leaves room for the arrows below)
 ].map((g) => ({ left: GRID.left, right: GRID.right, ...g }));
+
+// Fraction of chart height where the icon row's vertical center lands: in the
+// widened gap between the temp/precip (bottom 58%) and wind (top 76%) grids.
+export const ICON_BAND_Y = 0.67;
 
 const dateFmt = (lang?: string) =>
   new Intl.DateTimeFormat(lang || "en", { weekday: "short", day: "numeric" });
