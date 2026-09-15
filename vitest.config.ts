@@ -13,6 +13,10 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
+      // Default viewport is a 414px mobile size; the 703px screenshot host
+      // overflowed it and Playwright's element capture clipped the right third
+      // to white. Give the page room for the widest fixture.
+      viewport: { width: 1024, height: 768 },
       instances: [{ browser: "chromium" }],
     },
   },
