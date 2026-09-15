@@ -1,6 +1,11 @@
 {
   "editor_entity": "Værenhet",
   "editor_title": "Tittel",
+  "editor_default_view": "Standardvisning",
+  "editor_default_view_hourly": "Time for time",
+  "editor_default_view_daily": "Daglig",
+  "view_hourly": "Time",
+  "view_daily": "Dag",
   "editor_use_climate_normals": "Bruk klimanormaler",
   "editor_wind_direction": "Vindpilretning",
   "editor_wind_direction_source": "Peker mot kilde (fra)",

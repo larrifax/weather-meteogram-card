@@ -12,4 +12,7 @@ export interface MeteogramConfig extends LovelaceCardConfig {
   // Which way wind arrows point: "source" (toward where wind comes FROM, default)
   // or "target" (toward where wind is blowing TO).
   wind_direction?: "source" | "target";
+  // Which view the card opens in. Runtime toggle can switch it, but it always
+  // resets to this on reload (default "hourly").
+  default_view?: "hourly" | "daily";
 }

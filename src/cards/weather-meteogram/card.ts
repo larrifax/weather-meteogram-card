@@ -2,9 +2,15 @@ import type { ECharts } from "echarts/core";
 import * as echarts from "../../echarts";
 import type { LovelaceCard } from "custom-card-helpers";
 import { ICONS, type ThemeColors } from "../../const";
-import { paginate, type ForecastHour, type TimedForecast } from "../../forecast";
+import {
+  paginate,
+  upcomingDays,
+  type ForecastDay,
+  type ForecastHour,
+  type TimedForecast,
+} from "../../forecast";
 import type { ForecastEvent, Hass } from "../../ha-dom";
-import { meteogramOption, ICON_BAND_Y } from "../../charts/meteogram";
+import { meteogramOption, dailyOption, ICON_BAND_Y } from "../../charts/meteogram";
 import { computeBounds, type BoundsOverrides, type ClimateNormal } from "../../charts/bounds";
 import { fetchClimateNormal } from "../../charts/climate";
 import { CARD_NAME, EDITOR_NAME } from "./const";
@@ -16,8 +22,18 @@ interface Els {
   wrap: HTMLElement;
   chart: HTMLElement;
   icons: HTMLElement;
+  nav: HTMLElement;
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
+  seg: SegEl;
+}
+
+type View = "hourly" | "daily";
+
+// HA's ha-control-select: options/value props + value-changed event.
+interface SegEl extends HTMLElement {
+  options: { value: View; label: string }[];
+  value: View;
 }
 
 // Icon box size in px. Bumped from the old 24px scatter symbol so the meteocon
@@ -37,9 +53,14 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   private _page = 0;
   private _forecast: ForecastHour[] = [];
   private _pages: TimedForecast[][] = [];
+  private _daily: ForecastDay[] = [];
+  // Active view; resets to _defaultView on each setConfig (no cross-reload persistence).
+  private _defaultView: View = "hourly";
+  private _view: View = "hourly";
 
   private _sub = false;
   private _unsub?: () => void;
+  private _unsubDaily?: () => void;
   private _ready?: Promise<void>;
   private _chart?: ECharts;
   private _ro?: ResizeObserver;
@@ -69,6 +90,8 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     };
     this._useClimate = config.use_climate_normals ?? true;
     this._windDir = config.wind_direction ?? "target";
+    this._defaultView = config.default_view ?? "hourly";
+    this._view = this._defaultView;
     this._page = 0;
     void this._update();
   }
@@ -90,6 +113,8 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   public disconnectedCallback(): void {
     this._unsub?.();
     this._unsub = undefined;
+    this._unsubDaily?.();
+    this._unsubDaily = undefined;
     this._ro?.disconnect();
     this._chart?.dispose();
     this._chart = undefined;
@@ -109,6 +134,20 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         {
           type: "weather/subscribe_forecast",
           forecast_type: "hourly",
+          entity_id: this._entity,
+        },
+      );
+      // Daily forecast: separate subscription kept live alongside hourly so the
+      // view toggle is instant. A daily failure is non-fatal — the toggle just
+      // shows an empty daily chart until data arrives.
+      this._unsubDaily = await this._hass.connection.subscribeMessage<ForecastEvent>(
+        (e) => {
+          this._daily = (e.forecast as ForecastDay[]) ?? [];
+          if (this._view === "daily") void this._update();
+        },
+        {
+          type: "weather/subscribe_forecast",
+          forecast_type: "daily",
           entity_id: this._entity,
         },
       );
@@ -200,6 +239,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         <div class="hdr">
           <span class="ttl"></span>
           <span class="nav">
+            <ha-control-select class="seg"></ha-control-select>
             <ha-icon-button class="prev"><ha-icon icon="mdi:chevron-left"></ha-icon></ha-icon-button>
             <ha-icon-button class="next"><ha-icon icon="mdi:chevron-right"></ha-icon></ha-icon-button>
           </span>
@@ -213,8 +253,11 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         ha-card { padding: 8px 4px 4px; height:100%; min-height:320px; box-sizing:border-box; display:flex; flex-direction:column; }
         .hdr { display:flex; align-items:center; justify-content:space-between; padding:0 12px; }
         .ttl { font-size:1.1em; font-weight:500; }
+        .nav { display:flex; align-items:center; gap:4px; }
         .nav ha-icon-button { --mdc-icon-button-size:32px; --mdc-icon-size:20px; }
         .nav ha-icon-button[disabled] { opacity:.3; pointer-events:none; }
+        /* HA's own segmented control. Sized down to sit inline with nav. */
+        .seg { --control-select-height:32px; --mdc-icon-size:18px; width:140px; }
         .wrap { flex:1; min-height:0; display:flex; flex-direction:column; position:relative; touch-action: pan-y; }
         .chart { width:100%; flex:1; min-height:0; }
         /* Animated condition icons overlaid on the chart; positioned in JS. */
@@ -226,12 +269,19 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       wrap: q(".wrap"),
       chart: q(".chart"),
       icons: q(".icons"),
+      nav: q(".nav"),
       prev: q(".prev"),
       next: q(".next"),
+      seg: q(".seg"),
     };
+    this._el.seg.options = [
+      { value: "hourly", label: t(this._hass?.language, "view_hourly") },
+      { value: "daily", label: t(this._hass?.language, "view_daily") },
+    ];
     q(".ttl").textContent = this._titleOverride ?? t(this._hass?.language, "card_default_title");
 
     const go = (d: number) => {
+      if (this._view !== "hourly") return;
       const n = this._page + d;
       if (n >= 0 && n < (this._pages.length || 1)) {
         this._page = n;
@@ -240,6 +290,16 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     };
     this._el.prev.onclick = () => go(-1);
     this._el.next.onclick = () => go(1);
+
+    const setView = (v: View) => {
+      if (v === this._view) return;
+      this._view = v;
+      if (v === "hourly") this._page = Math.min(this._page, Math.max(0, this._pages.length - 1));
+      void this._update();
+    };
+    this._el.seg.addEventListener("value-changed", (e) =>
+      setView((e as CustomEvent<{ value: View }>).detail.value),
+    );
     let x0: number | null = null;
     this._el.wrap.addEventListener("touchstart", (e) => (x0 = e.touches[0].clientX), {
       passive: true,
@@ -263,8 +323,25 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
     };
   }
 
+  // Reflect the active view on the segmented control.
+  private _syncToggle(): void {
+    if (!this._el) return;
+    if (this._el.seg.value !== this._view) this._el.seg.value = this._view;
+    // Paging is hourly-only: the daily forecast fits one screen. Disable rather
+    // than hide so the toggle and prev/next keep their positions across views.
+    if (this._view === "daily") {
+      this._el.prev.disabled = true;
+      this._el.next.disabled = true;
+    }
+  }
+
   private _render(): void {
     if (!this._el || !this._chart) return;
+    this._syncToggle();
+    if (this._view === "daily") {
+      this._renderDaily();
+      return;
+    }
     const pages = paginate(this._forecast, Date.now());
     // No forecast yet: keep the built (empty) chart and wait for data rather than
     // replacing the DOM with an error, which would detach the chart container.
@@ -307,5 +384,54 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
 
     this._el.prev.disabled = this._page === 0;
     this._el.next.disabled = this._page === pages.length - 1;
+  }
+
+  private _renderDaily(): void {
+    if (!this._el || !this._chart) return;
+    const days = upcomingDays(this._daily, Date.now());
+    // No daily data yet: keep the (empty) chart mounted and wait, same as hourly.
+    if (!days.length) return;
+    // computeBounds reads `temperature`; feed it both high and templow so the
+    // fixed scale spans the whole band, then widen with the climate normal.
+    const forBounds = days.flatMap((d) => [d, { ...d, temperature: d.templow }]);
+    const bounds = computeBounds(forBounds, this._bounds, this._climate);
+    const labels = days.map((f) =>
+      new Intl.DateTimeFormat(this._hass?.language || "en", {
+        weekday: "short",
+        day: "numeric",
+      }).format(new Date(f.t)),
+    );
+    const th = this._themeColors();
+
+    this._sizeChart();
+    try {
+      this._chart.setOption(
+        dailyOption(
+          days,
+          labels,
+          th,
+          bounds,
+          this._windDir,
+          this._hass?.language,
+          this._useClimate ? this._climate : undefined,
+        ),
+        true,
+      );
+    } catch (err) {
+      console.error("[weather-meteogram] setOption failed:", err);
+      this._error(
+        t(this._hass?.language, "card_err_setoption") + String((err as Error).message ?? err),
+      );
+      return;
+    }
+    // One condition meteocon per day, overlaid like the hourly view.
+    this._el.icons.innerHTML = days
+      .map((f) => {
+        const src = ICONS[f.condition ?? ""] ?? ICONS.exceptional;
+        return `<img src="${src}" alt="${f.condition ?? ""}">`;
+      })
+      .join("");
+    this._iconTop = bounds.tempMax;
+    requestAnimationFrame(() => this._sizeChart());
   }
 }

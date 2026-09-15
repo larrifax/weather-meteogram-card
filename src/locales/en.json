@@ -1,6 +1,11 @@
 {
   "editor_entity": "Weather entity",
   "editor_title": "Title",
+  "editor_default_view": "Default view",
+  "editor_default_view_hourly": "Hourly",
+  "editor_default_view_daily": "Daily",
+  "view_hourly": "Hourly",
+  "view_daily": "Daily",
   "editor_use_climate_normals": "Use climate normals",
   "editor_wind_direction": "Wind arrow direction",
   "editor_wind_direction_source": "Point toward source (from)",
