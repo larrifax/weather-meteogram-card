@@ -2,6 +2,9 @@
 
 An hourly weather meteogram for Home Assistant, built with [Apache ECharts](https://echarts.apache.org/).
 
+![Weather Meteogram Card, light mode](assets/screenshot-light.png)
+![Weather Meteogram Card, dark mode](assets/screenshot-dark.png)
+
 Shows, top to bottom, for a 12-hour window:
 
 - a **condition icon** per hour

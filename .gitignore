@@ -6,3 +6,5 @@ dist
 *.log
 .claude/
 .vitest/
+
+test/__screenshots__/
