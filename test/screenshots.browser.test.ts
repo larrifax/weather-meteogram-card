@@ -7,7 +7,7 @@ import { EXAMPLE_DAILY } from "./fixtures/example-daily";
 
 // Stub the HA custom elements the card references (mirrors card.browser.test.ts).
 beforeAll(() => {
-  for (const tag of ["ha-card", "ha-icon", "ha-icon-button", "ha-form"]) {
+  for (const tag of ["ha-card", "ha-icon", "ha-icon-button", "ha-form", "ha-control-select"]) {
     if (!customElements.get(tag)) customElements.define(tag, class extends HTMLElement {});
   }
 });
@@ -117,9 +117,9 @@ for (const theme of ["light", "dark"] as const) {
     const svg = el.querySelector(".chart svg");
     expect(svg, "chart svg mounted").toBeTruthy();
     expect(svg!.querySelectorAll("path").length).toBeGreaterThan(15);
-    // Paging is hidden in daily view.
-    const prev = el.querySelector(".prev") as HTMLElement;
-    expect(prev.style.display).toBe("none");
+    // Paging is disabled (not hidden) in daily view, so layout stays put.
+    const prev = el.querySelector(".prev") as HTMLButtonElement;
+    expect(prev.disabled).toBe(true);
 
     await page.screenshot({ element: host, path: `__screenshots__/daily-${theme}.png` });
   });

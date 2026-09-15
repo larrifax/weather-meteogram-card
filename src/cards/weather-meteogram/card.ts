@@ -25,11 +25,16 @@ interface Els {
   nav: HTMLElement;
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
-  hourly: HTMLButtonElement;
-  daily: HTMLButtonElement;
+  seg: SegEl;
 }
 
 type View = "hourly" | "daily";
+
+// HA's ha-control-select: options/value props + value-changed event.
+interface SegEl extends HTMLElement {
+  options: { value: View; label: string }[];
+  value: View;
+}
 
 // Icon box size in px. Bumped from the old 24px scatter symbol so the meteocon
 // detail is legible.
@@ -234,10 +239,7 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         <div class="hdr">
           <span class="ttl"></span>
           <span class="nav">
-            <span class="seg" role="group">
-              <button class="hourly" type="button">${t(this._hass?.language, "view_hourly")}</button>
-              <button class="daily" type="button">${t(this._hass?.language, "view_daily")}</button>
-            </span>
+            <ha-control-select class="seg"></ha-control-select>
             <ha-icon-button class="prev"><ha-icon icon="mdi:chevron-left"></ha-icon></ha-icon-button>
             <ha-icon-button class="next"><ha-icon icon="mdi:chevron-right"></ha-icon></ha-icon-button>
           </span>
@@ -254,11 +256,8 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         .nav { display:flex; align-items:center; gap:4px; }
         .nav ha-icon-button { --mdc-icon-button-size:32px; --mdc-icon-size:20px; }
         .nav ha-icon-button[disabled] { opacity:.3; pointer-events:none; }
-        /* Segmented Hourly | Daily control, styled after HA's ha-control-select:
-           a rounded track with the active segment filled by the primary color. */
-        .seg { display:inline-flex; padding:2px; border-radius:10px; background:var(--control-select-background,var(--disabled-color,#8a94a6)); background-clip:padding-box; }
-        .seg button { appearance:none; border:0; border-radius:8px; background:transparent; color:var(--secondary-text-color,#8a94a6); font:inherit; font-size:.8em; line-height:1.4; padding:2px 10px; cursor:pointer; transition:background .15s,color .15s; }
-        .seg button[aria-pressed="true"] { background:var(--primary-color,#3f7fd0); color:var(--text-primary-color,#fff); }
+        /* HA's own segmented control. Sized down to sit inline with nav. */
+        .seg { --control-select-height:32px; --mdc-icon-size:18px; width:140px; }
         .wrap { flex:1; min-height:0; display:flex; flex-direction:column; position:relative; touch-action: pan-y; }
         .chart { width:100%; flex:1; min-height:0; }
         /* Animated condition icons overlaid on the chart; positioned in JS. */
@@ -273,9 +272,12 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       nav: q(".nav"),
       prev: q(".prev"),
       next: q(".next"),
-      hourly: q(".hourly"),
-      daily: q(".daily"),
+      seg: q(".seg"),
     };
+    this._el.seg.options = [
+      { value: "hourly", label: t(this._hass?.language, "view_hourly") },
+      { value: "daily", label: t(this._hass?.language, "view_daily") },
+    ];
     q(".ttl").textContent = this._titleOverride ?? t(this._hass?.language, "card_default_title");
 
     const go = (d: number) => {
@@ -295,8 +297,9 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
       if (v === "hourly") this._page = Math.min(this._page, Math.max(0, this._pages.length - 1));
       void this._update();
     };
-    this._el.hourly.onclick = () => setView("hourly");
-    this._el.daily.onclick = () => setView("daily");
+    this._el.seg.addEventListener("value-changed", (e) =>
+      setView((e as CustomEvent<{ value: View }>).detail.value),
+    );
     let x0: number | null = null;
     this._el.wrap.addEventListener("touchstart", (e) => (x0 = e.touches[0].clientX), {
       passive: true,
@@ -323,12 +326,13 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
   // Reflect the active view on the segmented control.
   private _syncToggle(): void {
     if (!this._el) return;
-    this._el.hourly.setAttribute("aria-pressed", String(this._view === "hourly"));
-    this._el.daily.setAttribute("aria-pressed", String(this._view === "daily"));
-    // Paging is hourly-only: the daily forecast fits one screen.
-    const hidePaging = this._view === "daily";
-    this._el.prev.style.display = hidePaging ? "none" : "";
-    this._el.next.style.display = hidePaging ? "none" : "";
+    if (this._el.seg.value !== this._view) this._el.seg.value = this._view;
+    // Paging is hourly-only: the daily forecast fits one screen. Disable rather
+    // than hide so the toggle and prev/next keep their positions across views.
+    if (this._view === "daily") {
+      this._el.prev.disabled = true;
+      this._el.next.disabled = true;
+    }
   }
 
   private _render(): void {
