@@ -3,6 +3,7 @@ import { page } from "vitest/browser";
 // Importing the entry registers <weather-meteogram-card> as a side effect.
 import "../src/weather-meteogram-card";
 import { EXAMPLE_FORECAST } from "./fixtures/example";
+import { EXAMPLE_DAILY } from "./fixtures/example-daily";
 
 // Stub the HA custom elements the card references (mirrors card.browser.test.ts).
 beforeAll(() => {
@@ -26,8 +27,9 @@ const hass = {
   states: { "weather.example": {} },
   config: { latitude: 58.66, longitude: 6.72 },
   connection: {
-    subscribeMessage(cb: (e: { forecast: unknown }) => void) {
-      setTimeout(() => cb({ forecast: EXAMPLE_FORECAST }), 0);
+    subscribeMessage(cb: (e: { forecast: unknown }) => void, sub: { forecast_type?: string }) {
+      const forecast = sub.forecast_type === "daily" ? EXAMPLE_DAILY : EXAMPLE_FORECAST;
+      setTimeout(() => cb({ forecast }), 0);
       return Promise.resolve(() => {});
     },
   },
@@ -75,7 +77,7 @@ const THEMES = {
   },
 } as const;
 
-const mountThemed = async (theme: keyof typeof THEMES) => {
+const mountThemed = async (theme: keyof typeof THEMES, config: object = {}) => {
   mockClimateFetch();
   const host = document.createElement("div");
   host.style.cssText = "width:703px;height:320px;padding:8px";
@@ -86,7 +88,7 @@ const mountThemed = async (theme: keyof typeof THEMES) => {
     setConfig: (c: object) => void;
     hass: unknown;
   };
-  el.setConfig({ entity: "weather.example", title: "Example" });
+  el.setConfig({ entity: "weather.example", title: "Example", ...config });
   host.appendChild(el);
   el.hass = hass;
   // Let the async subscribe/climate-fetch/paint chain settle.
@@ -104,5 +106,21 @@ for (const theme of ["light", "dark"] as const) {
     expect(svg!.querySelectorAll("path").length).toBeGreaterThan(15);
 
     await page.screenshot({ element: host, path: `__screenshots__/meteogram-${theme}.png` });
+  });
+}
+
+for (const theme of ["light", "dark"] as const) {
+  test(`renders and screenshots the daily view in ${theme} mode`, async () => {
+    const { host, el } = await mountThemed(theme, { default_view: "daily" });
+
+    // The daily high/low band should have painted from the daily fixture.
+    const svg = el.querySelector(".chart svg");
+    expect(svg, "chart svg mounted").toBeTruthy();
+    expect(svg!.querySelectorAll("path").length).toBeGreaterThan(15);
+    // Paging is hidden in daily view.
+    const prev = el.querySelector(".prev") as HTMLElement;
+    expect(prev.style.display).toBe("none");
+
+    await page.screenshot({ element: host, path: `__screenshots__/daily-${theme}.png` });
   });
 }

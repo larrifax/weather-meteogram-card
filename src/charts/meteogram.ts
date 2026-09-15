@@ -1,8 +1,8 @@
 import type { EChartsOption } from "echarts";
 import { COL, GRID, type ThemeColors } from "../const";
-import { num, type TimedForecast } from "../forecast";
+import { num, type TimedDay, type TimedForecast } from "../forecast";
 import { t } from "../i18n";
-import type { AxisBounds } from "./bounds";
+import type { AxisBounds, ClimateNormal } from "./bounds";
 
 // Two stacked grids in ONE chart instance: temperature + precipitation share
 // the top grid (temp on the left y-axis, precip mm on the right), wind sits in
@@ -114,6 +114,232 @@ function tooltipFormatter(data: TimedForecast[], lang?: string) {
       row(t(lang, "tooltip_gust"), `${gust} m/s`, COL.wind) +
       `</div>`
     );
+  };
+}
+
+/** Daily tooltip: one box with high/low temp, precip sum and wind for the day. */
+function dailyTooltipFormatter(data: TimedDay[], lang?: string) {
+  const heading = tipDateFmt(lang);
+  const row = (label: string, value: string, color: string) =>
+    `<span style="opacity:.7">${label}</span>` +
+    `<span style="text-align:right;font-weight:600;color:${color}">${value}</span>`;
+  return (params: any): string => {
+    const i = Array.isArray(params) ? params[0]?.dataIndex : params?.dataIndex;
+    const f = i != null ? data[i] : undefined;
+    if (!f) return "";
+    const hi = Math.round(num(f.temperature));
+    const lo = Math.round(num(f.templow));
+    const mm = num(f.precipitation);
+    const spd = Math.round(num(f.wind_speed));
+    const gust = Math.round(num(f.wind_gust_speed ?? f.wind_speed));
+    return (
+      `<div style="font-weight:700;font-size:14px;margin-bottom:4px">${heading.format(new Date(f.t))}</div>` +
+      `<div style="display:grid;grid-template-columns:auto auto;column-gap:12px;row-gap:2px">` +
+      row(t(lang, "tooltip_temp"), `${hi}° / ${lo}°`, COL.tempWarm) +
+      row(t(lang, "tooltip_precip"), `${mm.toFixed(1)} mm`, COL.precip) +
+      row(t(lang, "tooltip_wind"), `${spd} m/s`, COL.wind) +
+      row(t(lang, "tooltip_gust"), `${gust} m/s`, COL.wind) +
+      `</div>`
+    );
+  };
+}
+
+/**
+ * Daily variant: same two-grid layout as the hourly meteogram, but temperature
+ * becomes a high/low band (filled), precipitation is the daily sum, and the wind
+ * grid shows one barb per day. When climate normals are present they render as a
+ * faint horizontal "typical this month" band behind the forecast.
+ */
+export function dailyOption(
+  data: TimedDay[],
+  days: string[],
+  th: ThemeColors,
+  bounds: AxisBounds,
+  windDir: "source" | "target" = "source",
+  lang?: string,
+  climate?: ClimateNormal,
+): EChartsOption {
+  const low = data.map((f) => num(f.templow));
+  // Stack trick (mirrors the wind speed→gust fill): base = low line, delta = the
+  // high−low span stacked with an areaStyle, so the shaded area fills the range
+  // and the delta series' displayed value (low+delta) traces the high line.
+  const span = data.map((f) => Math.max(0, num(f.temperature) - num(f.templow)));
+  const mm = data.map((f) => num(f.precipitation));
+  const speed = data.map((f) => num(f.wind_speed));
+  const gustDelta = data.map((f) =>
+    Math.max(0, num(f.wind_gust_speed ?? f.wind_speed) - num(f.wind_speed)),
+  );
+  const flip = windDir === "target" ? 180 : 0;
+  const arrows = data.map((f, i) => ({
+    value: [i, 0],
+    symbolRotate: -num(f.wind_bearing) + flip,
+  }));
+  // Faint horizontal band = the location's typical high/low range for this month.
+  const climateBand = climate
+    ? [
+        [
+          { yAxis: climate.tempMin, itemStyle: { color: th.sec, opacity: 0.08 } },
+          { yAxis: climate.tempMax },
+        ],
+      ]
+    : undefined;
+
+  return {
+    animation: false,
+    grid: GRIDS,
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "line" },
+      backgroundColor: th.bg,
+      borderColor: th.sec,
+      textStyle: { color: th.pri },
+      formatter: dailyTooltipFormatter(data, lang),
+    },
+    axisPointer: { link: [{ xAxisIndex: "all" }] },
+    xAxis: [
+      { ...xAxis(days, 0, true, th, "top"), axisLabel: { fontSize: 10, color: th.sec } },
+      xAxis(days, 1, false, th),
+    ],
+    yAxis: [
+      {
+        gridIndex: 0,
+        type: "value",
+        min: bounds.tempMin,
+        max: bounds.tempMax,
+        position: "left",
+        axisLabel: { formatter: "{value}°", fontSize: 10, color: th.sec },
+        splitLine: faintSplit,
+      },
+      {
+        gridIndex: 0,
+        type: "value",
+        min: 0,
+        max: bounds.precipMax,
+        position: "right",
+        axisLabel: { formatter: "{value} mm", fontSize: 10, color: th.sec },
+        splitLine: { show: false },
+      },
+      {
+        gridIndex: 1,
+        type: "value",
+        min: 0,
+        max: bounds.windMax,
+        axisLabel: { fontSize: 10, color: th.sec },
+        splitLine: faintSplit,
+      },
+    ],
+    series: [
+      // Low line = base of the temp stack. Carries the climate markArea.
+      {
+        name: t(lang, "chart_temp"),
+        type: "line",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: low,
+        stack: "t",
+        smooth: true,
+        symbol: "circle",
+        symbolSize: 4,
+        lineStyle: { width: 2, color: COL.tempCold },
+        itemStyle: { color: COL.tempCold },
+        z: 3,
+        label: {
+          show: true,
+          formatter: (o: any) => `${Math.round(o.value)}°`,
+          fontSize: 10,
+          color: COL.tempCold,
+          position: "bottom",
+        },
+        ...(climateBand ? { markArea: { silent: true, data: climateBand as any } } : {}),
+      },
+      // High = low + span, stacked; areaStyle fills the band, lineStyle draws the
+      // high line. Its label shows the high value (the stacked total).
+      {
+        name: t(lang, "chart_temp"),
+        type: "line",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: span,
+        stack: "t",
+        smooth: true,
+        symbol: "circle",
+        symbolSize: 4,
+        lineStyle: { width: 2, color: COL.tempWarm },
+        itemStyle: { color: COL.tempWarm },
+        areaStyle: { color: COL.tempWarm, opacity: 0.12 },
+        z: 3,
+        label: {
+          show: true,
+          // o.value is the stacked delta (span), not the high; read the real high
+          // for this day from the source data by index.
+          formatter: (o: any) => `${Math.round(num(data[o.dataIndex]?.temperature))}°`,
+          fontSize: 10,
+          color: COL.tempWarm,
+          position: "top",
+        },
+      },
+      {
+        name: t(lang, "chart_precip"),
+        type: "bar",
+        xAxisIndex: 0,
+        yAxisIndex: 1,
+        data: mm,
+        barWidth: "44%",
+        itemStyle: { color: COL.precip },
+        z: 2,
+        label: {
+          show: true,
+          position: "top",
+          fontSize: 9,
+          color: COL.precip,
+          formatter: (o: any) => (o.value > 0 ? o.value.toFixed(1) : ""),
+        },
+      },
+      {
+        name: t(lang, "chart_wind"),
+        type: "line",
+        xAxisIndex: 1,
+        yAxisIndex: 2,
+        data: speed,
+        stack: "w",
+        symbol: "none",
+        lineStyle: { color: COL.wind, width: 1.5 },
+        areaStyle: { opacity: 0 },
+        z: 3,
+        label: {
+          show: true,
+          position: "top",
+          fontSize: 9,
+          color: COL.wind,
+          formatter: (o: any) => `${Math.round(o.value)}`,
+        },
+      },
+      {
+        name: t(lang, "chart_gust"),
+        type: "line",
+        xAxisIndex: 1,
+        yAxisIndex: 2,
+        data: gustDelta,
+        stack: "w",
+        symbol: "none",
+        lineStyle: { opacity: 0 },
+        areaStyle: { color: COL.wind, opacity: 0.3 },
+        z: 2,
+      },
+      {
+        name: t(lang, "chart_direction"),
+        type: "scatter",
+        xAxisIndex: 1,
+        yAxisIndex: 2,
+        data: arrows,
+        symbol: "path://M0,-5 L-3,4 L0,2 L3,4 Z",
+        symbolSize: 11,
+        symbolOffset: [0, 14],
+        itemStyle: { color: th.sec },
+        silent: true,
+        z: 4,
+      },
+    ],
   };
 }
 

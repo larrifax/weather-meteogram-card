@@ -14,6 +14,18 @@ const schema = (lang?: string) => [
     selector: { entity: { domain: "weather" } },
   },
   { name: "title", selector: { text: {} } },
+  {
+    name: "default_view",
+    selector: {
+      select: {
+        mode: "dropdown" as const,
+        options: [
+          { value: "hourly", label: t(lang, "editor_default_view_hourly") },
+          { value: "daily", label: t(lang, "editor_default_view_daily") },
+        ],
+      },
+    },
+  },
   { name: "use_climate_normals", selector: { boolean: {} } },
   {
     name: "wind_direction",
@@ -42,6 +54,7 @@ const schema = (lang?: string) => [
 const LABEL_KEYS: Record<string, TranslationKey> = {
   entity: "editor_entity",
   title: "editor_title",
+  default_view: "editor_default_view",
   use_climate_normals: "editor_use_climate_normals",
   wind_direction: "editor_wind_direction",
   temp_min: "editor_temp_min",
