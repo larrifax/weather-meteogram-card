@@ -254,10 +254,10 @@ export class WeatherMeteogramCard extends HTMLElement implements LovelaceCard {
         .nav { display:flex; align-items:center; gap:4px; }
         .nav ha-icon-button { --mdc-icon-button-size:32px; --mdc-icon-size:20px; }
         .nav ha-icon-button[disabled] { opacity:.3; pointer-events:none; }
-        /* Segmented Hourly | Daily control. */
-        .seg { display:inline-flex; border:1px solid var(--divider-color,#484848); border-radius:6px; overflow:hidden; }
-        .seg button { appearance:none; border:0; background:transparent; color:var(--secondary-text-color,#8a94a6); font:inherit; font-size:.8em; padding:3px 8px; cursor:pointer; }
-        .seg button + button { border-left:1px solid var(--divider-color,#484848); }
+        /* Segmented Hourly | Daily control, styled after HA's ha-control-select:
+           a rounded track with the active segment filled by the primary color. */
+        .seg { display:inline-flex; padding:2px; border-radius:10px; background:var(--control-select-background,var(--disabled-color,#8a94a6)); background-clip:padding-box; }
+        .seg button { appearance:none; border:0; border-radius:8px; background:transparent; color:var(--secondary-text-color,#8a94a6); font:inherit; font-size:.8em; line-height:1.4; padding:2px 10px; cursor:pointer; transition:background .15s,color .15s; }
         .seg button[aria-pressed="true"] { background:var(--primary-color,#3f7fd0); color:var(--text-primary-color,#fff); }
         .wrap { flex:1; min-height:0; display:flex; flex-direction:column; position:relative; touch-action: pan-y; }
         .chart { width:100%; flex:1; min-height:0; }
