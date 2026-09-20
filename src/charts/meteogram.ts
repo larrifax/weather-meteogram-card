@@ -224,7 +224,12 @@ export function dailyOption(
         type: "value",
         min: 0,
         max: bounds.windMax,
-        axisLabel: { fontSize: 10, color: th.sec },
+        // value axis: interval is ignored, so drop every other label via formatter index
+        axisLabel: {
+          fontSize: 10,
+          color: th.sec,
+          formatter: (_v: number, i: number) => (i % 2 === 0 ? `${_v}` : ""),
+        },
         splitLine: faintSplit,
       },
     ],
@@ -447,7 +452,12 @@ export function meteogramOption(
         type: "value",
         min: 0,
         max: bounds.windMax,
-        axisLabel: { fontSize: 10, color: th.sec },
+        // value axis: interval is ignored, so drop every other label via formatter index
+        axisLabel: {
+          fontSize: 10,
+          color: th.sec,
+          formatter: (_v: number, i: number) => (i % 2 === 0 ? `${_v}` : ""),
+        },
         splitLine: faintSplit,
       },
     ],
