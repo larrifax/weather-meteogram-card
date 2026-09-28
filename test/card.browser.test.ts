@@ -90,14 +90,14 @@ test("visualMap colors the temp line by value (gradient endpoints present)", asy
   // Guards VisualMapComponent registration in echarts.ts: without it the
   // visualMap option is silently ignored and the line falls back to a flat
   // stroke. Harness temps span ~3–13°, crossing the 1–7° band, so both the
-  // warm (#e34a4a) and cold (#4a90d9) gradient stops must appear.
+  // warm (#ef6b6b) and cold (#4f9fe8) gradient stops must appear.
   const card = await mount();
   const svg = card.querySelector(".chart svg")!;
   const stops = [...svg.querySelectorAll("linearGradient stop")].map((s) =>
     s.getAttribute("stop-color"),
   );
-  expect(stops).toContain("rgb(227,74,74)");
-  expect(stops).toContain("rgb(74,144,217)");
+  expect(stops).toContain("rgb(239,107,107)");
+  expect(stops).toContain("rgb(79,159,232)");
 });
 
 test("a single shared tooltip renders on hover", async () => {
