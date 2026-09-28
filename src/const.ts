@@ -8,10 +8,10 @@ export const DAILY_MAX = 7;
 export { ICONS } from "./icons";
 
 export const COL = {
-  temp: "#e8a33d",
-  tempWarm: "#e34a4a",
-  tempCold: "#4a90d9",
-  precip: "#4a90d9",
+  temp: "#f5b942",
+  tempWarm: "#ef6b6b",
+  tempCold: "#4f9fe8",
+  precip: "#4f9fe8",
   wind: "#607d8b",
 };
 export const GRID = { left: 40, right: 48 };

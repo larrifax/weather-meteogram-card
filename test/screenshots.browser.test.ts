@@ -70,7 +70,7 @@ const THEMES = {
     background: "#f5f5f5",
   },
   dark: {
-    "--primary-text-color": "#e1e1e1",
+    "--primary-text-color": "#e8eaed",
     "--secondary-text-color": "#9b9b9b",
     "--ha-card-background": "#1c1c1c",
     background: "#111111",
